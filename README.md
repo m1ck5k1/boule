@@ -1,3 +1,12 @@
+> **In memory of Nelson Mandela (1918 – 2013).**
+> Prisoner. President. Conscience of a people.
+> He showed that a people armed with the vote — and the will to use it — can bend a country toward justice.
+>
+> *"For to be free is not merely to cast off one's chains, but to live in a way that respects and enhances the freedom of others."*
+> — Nelson Mandela, *Long Walk to Freedom*
+
+---
+
 # Boule
 
 > *A general-public, real-time proxy voting machine for legislation.*
