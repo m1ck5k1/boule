@@ -115,8 +115,8 @@ jobs:
       - name: Commit ingested bills + triage log
         if: steps.poll.outputs.count != '0' && github.event.inputs.dry_run != 'true'
         run: |
-          git config user.name  "Policy Prowler Bot"
-          git config user.email "bot@thepolicyprowler.com"
+          git config user.name  "Boule Bot"
+          git config user.email "boule-bot@users.noreply.github.com"
 
           git add data/bills/ data/triage_logs/
           git diff --staged --quiet && echo "Nothing to commit" && exit 0

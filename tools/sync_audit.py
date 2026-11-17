@@ -12,8 +12,8 @@ Example:
 
 Requirements:
     pip install pyaml requests
-    Add AIRTABLE_API_KEY=<token> to a .env file in the project root
-    (or export AIRTABLE_API_KEY=<token> in your shell)
+    Add AIRTABLE_PAT=<token> to a .env file in the project root
+    (AIRTABLE_API_KEY is accepted as a backward-compatible fallback)
 """
 
 import os

@@ -1,80 +1,87 @@
-# The Policy Prowler
+# Boule
 
 ## Mission
-Contrarian legislative auditor and cyberpunk-noir fiscal forensicist. Audit the "Legislative Stack."
-Identify systemic debt bugs, fiscal malware, and the arithmetic of insolvency.
+A general-public, **real-time proxy voting machine** for legislation. Mirror the US
+legislative process — bills, stages, floor votes — from the Congress.gov APIs, and open each
+bill to a **public vote running in tandem with the official one**. The purpose is to make the
+gap between voters and elected officials visible, bill by bill.
 
-## Persona & Voice
-- **Tone:** Cold, biting, skeptical. Use technical metaphors (bugs, malware, memory leaks, exploits,
-  midnight riders) for fiscal policy. Never moralize — let the arithmetic speak.
-- **Framing:** Official headlines = "User Interface." Debt interest = "the Kernel."
-- **Zero-Trust:** Every "bipartisan" bill is a suspected fiscal trap until the arithmetic proves otherwise.
-- **Data Skepticism:** CBO "Baseline" projections = "Optimistic Simulation." Cross-reference with
-  real-world interest rate friction.
+## Operating Principles
+- **The AI observes; it does not decide.** Flag anomalies (coordinated/duplicate votes,
+  IP-level clustering, timing patterns) and publish the reading as *opinion* beside the raw
+  tally — never as a verdict or as authority over the result.
+- **Tone:** neutral, evidence-first, procedural. No editorialising.
+- **Zero-Trust on data:** every bill, stage, and vote count carries a source.
+- **Neutral on policy:** no prior that any bill is good or bad. (The retired "every bipartisan
+  bill is a fiscal trap" prior is dead — it turned the agent system into a consensus machine.)
+
+## Status
+Boule was renamed from **The Policy Prowler**. The project moved from a financial-analysis
+model to a public real-time proxy voting machine. The Congress.gov ingestion pipeline carries
+forward as the substrate; the financial-audit framing is retired and preserved as historical
+work under `research/audits/` and `articles/published/`. The voting layer is not built yet.
 
 ## Directory Structure
-- `data/bills/`          — Raw legislative source code (bill text, amendments, diffs)
-- `data/cbo_reports/`    — CBO "Optimistic Simulation" logs
+- `data/bills/`          — Raw bill text, amendments, diffs
+- `data/cbo_reports/`    — CBO reports (external fiscal data)
 - `data/archive/`        — Superseded or historical data
-- `research/audits/`     — Verified bug reports and forensic breakdowns
-- `articles/published/`  — Immutable noir dispatches (do not edit after publish)
-- `templates/`           — Audit and article scaffolding for new work
+- `data/triage_logs/`    — Daily bill-monitor triage output
+- `research/audits/`     — Historical forensic breakdowns (Policy Prowler era)
+- `articles/published/`  — Historical noir dispatches (Policy Prowler era)
+- `templates/`           — Scaffolding for new work
 - `tools/`               — Ingestion, formatting, and pipeline scripts
-- `logs/`                — Operational session logs
 
 ## File Naming Convention
 `YYMMDD_Short_Title.md` — e.g., `260222_Lobbyist_ROI_Audit.md`
 Audit IDs follow the pattern: `AUD-YYMMDD-SUBJECT` (embedded in front-matter of each audit).
 
-## Forensic Workflow (full detail in SOP.md)
-1. **Ingest** — Drop raw bills/reports into `/data`
-2. **Scan** — Identify bugs (Midnight Riders, Arithmetic Leaks, Localized Bribes)
-3. **Diff** — Compare House vs. Senate versions; track delta between estimates
-4. **Audit** — Generate Bug Report in `research/audits/` using `templates/audit_bug_report.md`
-5. **Dispatch** — Write the published article using `templates/article_dispatch.md`
-6. **Sync** — Push audit record to Airtable institutional memory
+## Ingestion Workflow (full detail in SOP.md)
+1. **Ingest** — Pull new bills/reports into `/data`
+2. **Scan** — Keyword + Haiku triage for relevance (`tools/poll_bills.py`)
+3. **Diff** — Compare House vs. Senate versions; track delta
+4. **Audit** — (Historical desk) forensics on a bill of interest
+5. **Sync** — Push any record to Airtable institutional memory
 
 ## Citation Protocol (Open Ledger)
 - Every fact, dollar amount, and vote count requires a source citation.
 - Cross-reference local files in `data/` against Airtable source IDs.
-- LaTeX tables for all budget comparisons (3-decimal precision, Substack-compatible).
 - Canonical sources: CBO (cbo.gov), bill text (congress.gov), House votes (clerk.house.gov),
   Senate votes (senate.gov/legislative/votes_new.htm), Treasury data (fiscaldata.treasury.gov).
 
+## Congress.gov API Notes
+- Base `https://api.congress.gov/v3`, key in the `x-api-key` header.
+- 5,000 requests/hour; 20 results/page by default, 250 max (`offset` + `pagination.next`).
+- **Stage history + roll calls:** `/bill/{congress}/{type}/{number}/actions` — the endpoint
+  that matters; `recordedVotes` is inline.
+- House roll calls: JSON. Senate roll calls: no dedicated endpoint — parse the linked
+  `senate.gov` XML.
+- Build the stage machine on **action type + `sourceSystem.code` + text matching**, never on
+  `actionCode` (authoritative only for Library-of-Congress actions; Senate actions carry none).
+- **No CBO cost-estimate endpoint** — fiscal data comes from `cbo.gov`.
+
 ## Institutional Memory (Airtable)
 Access via the Airtable MCP tools available in this Claude Code session.
-- **Base:** The Policy Prowler — Institutional Memory (shared with TheVaultWatcher)
-- **Base ID:** `appA8bFOOAw72AZ24`
-- **Audits table ID:** `tbl92R4P97QrUZvFE` — PolicyProwler forensic audits
+- **Base ID:** `appA8bFOOAw72AZ24` (shared with TheVaultWatcher)
+- **Audits table ID:** `tbl92R4P97QrUZvFE`
 - **Bills table ID:** `tbl4eVGyE4Kc1ZqRt` — tracked legislation
-- **VaultWatcher_Alerts table ID:** `tblxnMKuEGpAsB3m3` — VaultWatcher threshold breach alerts (read-only from this desk)
-- **convergence_events table ID:** `tblSf6ZOr0qHTbuD0` — joint intelligence log; either desk can write
+- **VaultWatcher_Alerts table ID:** `tblxnMKuEGpAsB3m3` — VaultWatcher alerts (read-only from this desk)
+- **convergence_events table ID:** `tblSf6ZOr0qHTbuD0` — joint intelligence log
 
-To sync a completed audit: run `tools/sync_audit.py <audit_file_path>`.
-To sync manually: use `mcp__claude_ai_Airtable__create_records_for_table` with baseId
-`appA8bFOOAw72AZ24`, tableId `tbl92R4P97QrUZvFE`, and fields mapped from the audit's YAML front-matter.
+To sync a record: run `tools/sync_audit.py <file_path>`. Requires `AIRTABLE_PAT` in `.env`
+(`AIRTABLE_API_KEY` accepted as fallback).
 
-### Cross-Desk Convergence Protocol
-When a PolicyProwler audit involves silver market mechanics, CFTC exemptions, COMEX delivery rules,
-Treasury precious metal rulemaking, or sanctions affecting SGE settlement:
+### Cross-Desk Convergence Protocol (inherited, Policy Prowler era)
+When a record involves silver market mechanics, CFTC exemptions, COMEX delivery rules,
+Treasury precious-metal rulemaking, or sanctions affecting SGE settlement:
 1. Check `VaultWatcher_Alerts` for active alerts in the same date window
-2. If a matching market signal exists, create a `convergence_events` record:
-   - `event_id`: `CVG-YYMMDD-SUBJECT`
-   - `policy_signal`: link to the PolicyProwler Audit record
-   - `market_signal`: link to the VaultWatcher_Alerts record
-   - `bug_type`: the exploit vector (Midnight Rider, Delivery Exemption, etc.)
-   - `severity`: derived from the worse of the two signals
-   - `lead_desk`: whichever desk has the stronger primary evidence
-   - `status`: Monitoring (initial); escalate to Investigating when both signals confirmed
-3. The `Audits` table auto-shows linked convergence events via the back-link field `fldBYESGlKg7LQ2xx`
+2. If a matching market signal exists, create a `convergence_events` record
+3. The `Audits` table shows linked convergence events via back-link field `fldBYESGlKg7LQ2xx`
 
 Note: The IDs in the original GEMINI.md (`76526270-...`, `2f9416d1-...`) were NotebookLM
 source IDs, not Airtable. They are no longer relevant.
 
 ## Session Context
-Current legislative intel lives in `prowler_intel_feb26.md`. Update this file at the start of
-each new session to reflect the active threat surface.
+Historical legislative intel lives in `prowler_intel_feb26.md`.
 
 ## Research Index
-All audits and published articles are registered in `RESEARCH_INDEX.md`.
-Update it whenever a new audit or article is completed.
+Historical audits and published articles are registered in `RESEARCH_INDEX.md`.
