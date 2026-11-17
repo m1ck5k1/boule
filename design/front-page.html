@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Boule — front page (A+C fusion mock)</title>
+<title>Boule — today's bills</title>
 <style>
 /* ============================================================
-   BOULE — design tokens
+   BOULE — design tokens  (see DESIGN.md)
    School: A (public-information / ballot vernacular)
          + C (data-native / procedural)
-   Rule: colour = meaning, never mood. One signal colour, reserved
-   for the gap ONLY. If all styling were removed, the two numbers
-   must still be the loudest thing on the page.
+   Colour law: --signal is reserved for the gap ONLY.
+   Accessibility: the bars are DECORATION; the numbers are the data.
+   Every bar block therefore carries a visually-hidden text alternative.
    ============================================================ */
 :root{
   --paper:      #FAF9F6;
@@ -29,15 +29,10 @@
   --ds:  0.14em;           /* letterspacing for caps labels */
 }
 html.invert{
-  --paper:      #14130F;
-  --ink:        #F2F0EA;
-  --ink-2:      #A9A296;
-  --rule:       #35322B;
-  --rule-hard:  #F2F0EA;
-  --track:      #26241E;
-  --signal:     #E4643F;
+  --paper:#14130F; --ink:#F2F0EA; --ink-2:#A9A296;
+  --rule:#35322B; --rule-hard:#F2F0EA; --track:#26241E; --signal:#E4643F;
 }
-html.compact{ --gap: 14px; }
+html.compact{ --gap:14px; }
 
 *{ box-sizing:border-box; }
 html,body{ margin:0; }
@@ -48,37 +43,50 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 
+/* ---- accessibility utilities ---- */
+.sr-only{
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+}
+.skip{
+  position:absolute; left:-9999px; top:0; z-index:30;
+  background:var(--ink); color:var(--paper); text-decoration:none;
+  padding:12px 18px; font-size:12px; letter-spacing:var(--ds); text-transform:uppercase;
+}
+.skip:focus{ left:0; }
+:focus-visible{ outline:2px solid var(--signal); outline-offset:2px; }
+
 /* ---- masthead: a document header, not a hero ---- */
+header.doc{ border-bottom:2px solid var(--rule-hard); }
 .masthead{
-  border-bottom:2px solid var(--rule-hard);
   padding:14px var(--gap) 10px;
   display:flex; align-items:baseline; gap:18px; flex-wrap:wrap;
 }
-.wordmark{
-  font-weight:700; font-size:22px; letter-spacing:.30em;
-  text-transform:uppercase; line-height:1;
+h1.wordmark{
+  font-size:22px; font-weight:700; letter-spacing:.30em; text-transform:uppercase;
+  line-height:1; margin:0;
 }
 .masthead .tag{
   font-size:11.5px; color:var(--ink-2); letter-spacing:.02em; flex:1 1 320px;
-  line-height:1.35;
+  line-height:1.35; margin:0;
 }
 .signin{
   font-size:11px; letter-spacing:var(--ds); text-transform:uppercase;
   border:1px solid var(--rule-hard); background:none; color:inherit;
-  padding:8px 14px; min-height:36px; cursor:pointer; font-family:inherit;
+  padding:8px 14px; min-height:44px; cursor:pointer; font-family:inherit;
 }
 .signin:hover{ background:var(--rule-hard); color:var(--paper); }
 
 /* ---- dateline ---- */
 .dateline{
   display:flex; gap:18px; align-items:baseline; flex-wrap:wrap;
-  padding:12px var(--gap); border-bottom:1px solid var(--rule);
+  padding:12px var(--gap); border-top:1px solid var(--rule);
   font-size:11px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2);
 }
 .dateline b{ color:var(--ink); letter-spacing:var(--ds); }
 
 /* ---- the ledger ---- */
-.ledger{ border-bottom:1px solid var(--rule); }
+.ledger{ margin:0; padding:0; list-style:none; border-bottom:1px solid var(--rule); }
 .bill{
   display:grid;
   grid-template-columns: minmax(230px,1fr) minmax(300px,1.35fr) auto;
@@ -86,13 +94,14 @@ body{
   padding:20px var(--gap);
   border-top:1px solid var(--rule);
 }
-.bill:first-child{ border-top:none; }
+.ledger li:first-child .bill{ border-top:none; }
 
 /* identity */
 .bill-id{ font-family:var(--mono); font-size:12px; letter-spacing:.06em; }
-.bill-title{ font-size:16px; line-height:1.25; margin:3px 0 7px; }
+.bill-title{ font-size:16px; font-weight:400; line-height:1.25; margin:3px 0 7px; }
 .stage{
   font-size:10.5px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2);
+  margin:0;
 }
 .stage .dot{ display:inline-block; width:5px; height:5px; border:1px solid var(--ink-2); margin-right:6px; vertical-align:0; }
 .stage.open .dot{ background:var(--ink); border-color:var(--ink); }
@@ -119,10 +128,10 @@ body{
   background:var(--signal);
 }
 .delta{
-  font-family:var(--mono); font-size:12px; color:var(--signal); font-weight:700;
-  letter-spacing:.02em;
+  margin:8px 0 0; font-family:var(--mono); font-size:12px; color:var(--signal);
+  font-weight:700; letter-spacing:.02em;
 }
-.nogap{ font-size:11px; color:var(--ink-2); font-style:italic; }
+.nogap{ margin:8px 0 0; font-size:11px; color:var(--ink-2); font-style:italic; }
 
 /* action */
 .act{ text-align:right; }
@@ -132,7 +141,6 @@ body{
   padding:13px 18px; min-height:46px; cursor:pointer; white-space:nowrap;
 }
 .vote:hover{ background:var(--paper); color:var(--ink); }
-.vote:focus-visible{ outline:2px solid var(--signal); outline-offset:2px; }
 .voted{
   font-size:10.5px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2);
   font-weight:700;
@@ -140,8 +148,8 @@ body{
 
 /* ---- nav: text, like a form footer ---- */
 .nav{
-  display:flex; gap:26px; padding:16px var(--gap) 40px; flex-wrap:wrap;
-  border-top:1px solid var(--rule);
+  display:flex; gap:26px; padding:16px var(--gap); flex-wrap:wrap;
+  border-bottom:1px solid var(--rule);
 }
 .nav a{
   font-size:11px; letter-spacing:var(--ds); text-transform:uppercase;
@@ -150,12 +158,11 @@ body{
 .nav a[aria-current]{ color:var(--ink); border-bottom:2px solid var(--ink); }
 .nav a:hover{ color:var(--ink); }
 
-.note{
-  padding:0 var(--gap) 46px; font-size:11px; color:var(--ink-2); line-height:1.5; max-width:64ch;
-}
+footer.doc{ padding:20px var(--gap) 46px; }
+.note{ margin:0; font-size:11px; color:var(--ink-2); line-height:1.5; max-width:64ch; }
 .note b{ color:var(--ink); }
 
-/* ---- tweaks ---- */
+/* ---- tweaks (mock-only control) ---- */
 .tweaks{
   position:fixed; right:12px; bottom:12px; z-index:9;
   border:1px solid var(--rule-hard); background:var(--paper);
@@ -165,7 +172,7 @@ body{
 .tweaks button{
   font-family:inherit; font-size:inherit; letter-spacing:inherit; text-transform:inherit;
   background:none; color:var(--ink); border:0; border-left:1px solid var(--rule);
-  padding:9px 12px; cursor:pointer;
+  padding:11px 14px; min-height:44px; cursor:pointer;
 }
 .tweaks button:first-child{ border-left:0; }
 .tweaks button[aria-pressed="true"]{ background:var(--ink); color:var(--paper); }
@@ -184,115 +191,144 @@ body{
 </head>
 <body>
 
-<header class="masthead">
-  <div class="wordmark">Boule</div>
-  <p class="tag">A second tally that runs beside the real one, so the gap becomes visible.</p>
-  <button class="signin">Sign in</button>
+<a class="skip" href="#main">Skip to today's bills</a>
+
+<header class="doc">
+  <div class="masthead">
+    <h1 class="wordmark">Boule</h1>
+    <p class="tag">A second tally that runs beside the real one, so the gap becomes visible.</p>
+    <button class="signin">Sign in</button>
+  </div>
+  <div class="dateline">
+    <span>Today — <b>Tue 17 Nov 2026</b></span>
+    <span>Open for a vote: <b>3</b></span>
+  </div>
 </header>
 
-<div class="dateline">
-  <span>Today — <b>Tue 17 Nov 2026</b></span>
-  <span>Open for a vote: <b>3</b></span>
-</div>
+<main id="main">
+  <ul class="ledger">
 
-<main class="ledger">
+    <!-- 1. both tallies exist -> draw the gap -->
+    <li><article class="bill" aria-labelledby="b1">
+      <div>
+        <div class="bill-id">H.R. 10983</div>
+        <h2 class="bill-title" id="b1">Digital Privacy Amendment Act</h2>
+        <p class="stage open"><span class="dot" aria-hidden="true"></span>Passed House → Senate</p>
+      </div>
 
-  <!-- 1. both tallies exist -> draw the gap -->
-  <section class="bill">
-    <div>
-      <div class="bill-id">H.R. 10983</div>
-      <h2 class="bill-title">Digital Privacy Amendment Act</h2>
-      <div class="stage open"><span class="dot"></span>Passed House → Senate</div>
-    </div>
-    <div class="tallies">
-      <div class="trow">
-        <span class="tlabel">Public</span>
-        <span class="track"><span class="fill" style="--p:68%"></span></span>
-        <span class="tpct">68%</span>
-        <span class="tcount">1,204</span>
+      <!-- the bars are decoration; this sentence is the data -->
+      <p class="sr-only">
+        Public tally 68 percent, 1,204 votes. Official tally 51 percent, 219 to 207.
+        Gap: 17 percentage points.
+      </p>
+      <div class="tallies" aria-hidden="true">
+        <div class="trow">
+          <span class="tlabel">Public</span>
+          <span class="track"><span class="fill" style="--p:68%"></span></span>
+          <span class="tpct">68%</span>
+          <span class="tcount">1,204</span>
+        </div>
+        <div class="trow">
+          <span class="tlabel">Official</span>
+          <span class="track"><span class="fill off" style="--p:51.4%"></span><span class="gapfill" style="--a:51.4%;--b:68%"></span></span>
+          <span class="tpct">51%</span>
+          <span class="tcount">219–207</span>
+        </div>
+        <p class="delta">Gap 17 points</p>
       </div>
-      <div class="trow">
-        <span class="tlabel">Official</span>
-        <span class="track"><span class="fill off" style="--p:51.4%"></span><span class="gapfill" style="--a:51.4%;--b:68%"></span></span>
-        <span class="tpct">51%</span>
-        <span class="tcount">219–207</span>
-      </div>
-      <div style="margin-top:8px"><span class="delta">Δ 17 points</span></div>
-    </div>
-    <div class="act"><button class="vote">Put it to the vote</button></div>
-  </section>
 
-  <!-- 2. no official vote yet -> the gap cannot be drawn honestly -->
-  <section class="bill">
-    <div>
-      <div class="bill-id">S. 4412</div>
-      <h2 class="bill-title">Federal Waterways Reauthorization</h2>
-      <div class="stage open"><span class="dot"></span>Reported by committee</div>
-    </div>
-    <div class="tallies">
-      <div class="trow">
-        <span class="tlabel">Public</span>
-        <span class="track"><span class="fill" style="--p:12%"></span></span>
-        <span class="tpct">12%</span>
-        <span class="tcount">88</span>
+      <div class="act">
+        <button class="vote" aria-label="Put it to the vote — H.R. 10983, Digital Privacy Amendment Act">Put it to the vote</button>
       </div>
-      <div class="trow">
-        <span class="tlabel">Official</span>
-        <span class="track"></span>
-        <span class="tpct">—</span>
-        <span class="tcount">—</span>
-      </div>
-      <div style="margin-top:8px"><span class="nogap">No recorded vote yet — no gap to report.</span></div>
-    </div>
-    <div class="act"><button class="vote">Put it to the vote</button></div>
-  </section>
+    </article></li>
 
-  <!-- 3. chamber voted against; public disagrees -> the widest gap -->
-  <section class="bill">
-    <div>
-      <div class="bill-id">H.J.Res. 88</div>
-      <h2 class="bill-title">Continuing Appropriations, FY2027</h2>
-      <div class="stage"><span class="dot"></span>Failed Senate — vote closed</div>
-    </div>
-    <div class="tallies">
-      <div class="trow">
-        <span class="tlabel">Public</span>
-        <span class="track"><span class="fill" style="--p:74%"></span></span>
-        <span class="tpct">74%</span>
-        <span class="tcount">3,406</span>
+    <!-- 2. no official vote yet -> the gap cannot be drawn honestly -->
+    <li><article class="bill" aria-labelledby="b2">
+      <div>
+        <div class="bill-id">S. 4412</div>
+        <h2 class="bill-title" id="b2">Federal Waterways Reauthorization</h2>
+        <p class="stage open"><span class="dot" aria-hidden="true"></span>Reported by committee</p>
       </div>
-      <div class="trow">
-        <span class="tlabel">Official</span>
-        <span class="track"><span class="fill off" style="--p:48.5%"></span><span class="gapfill" style="--a:48.5%;--b:74%"></span></span>
-        <span class="tpct">48%</span>
-        <span class="tcount">48–51</span>
-      </div>
-      <div style="margin-top:8px"><span class="delta">Δ 26 points</span></div>
-    </div>
-    <div class="act"><span class="voted">Record closed</span></div>
-  </section>
 
+      <p class="sr-only">
+        Public tally 12 percent, 88 votes. No recorded official vote yet — no gap to report.
+      </p>
+      <div class="tallies" aria-hidden="true">
+        <div class="trow">
+          <span class="tlabel">Public</span>
+          <span class="track"><span class="fill" style="--p:12%"></span></span>
+          <span class="tpct">12%</span>
+          <span class="tcount">88</span>
+        </div>
+        <div class="trow">
+          <span class="tlabel">Official</span>
+          <span class="track"></span>
+          <span class="tpct">—</span>
+          <span class="tcount">—</span>
+        </div>
+        <p class="nogap">No recorded vote yet — no gap to report.</p>
+      </div>
+
+      <div class="act">
+        <button class="vote" aria-label="Put it to the vote — S. 4412, Federal Waterways Reauthorization">Put it to the vote</button>
+      </div>
+    </article></li>
+
+    <!-- 3. chamber voted against; public disagrees -> the widest gap -->
+    <li><article class="bill" aria-labelledby="b3">
+      <div>
+        <div class="bill-id">H.J.Res. 88</div>
+        <h2 class="bill-title" id="b3">Continuing Appropriations, FY2027</h2>
+        <p class="stage"><span class="dot" aria-hidden="true"></span>Failed Senate — vote closed</p>
+      </div>
+
+      <p class="sr-only">
+        Public tally 74 percent, 3,406 votes. Official tally 48 percent, 48 to 51.
+        Gap: 26 percentage points. This vote is closed.
+      </p>
+      <div class="tallies" aria-hidden="true">
+        <div class="trow">
+          <span class="tlabel">Public</span>
+          <span class="track"><span class="fill" style="--p:74%"></span></span>
+          <span class="tpct">74%</span>
+          <span class="tcount">3,406</span>
+        </div>
+        <div class="trow">
+          <span class="tlabel">Official</span>
+          <span class="track"><span class="fill off" style="--p:48.5%"></span><span class="gapfill" style="--a:48.5%;--b:74%"></span></span>
+          <span class="tpct">48%</span>
+          <span class="tcount">48–51</span>
+        </div>
+        <p class="delta">Gap 26 points</p>
+      </div>
+
+      <div class="act"><span class="voted">Record closed</span></div>
+    </article></li>
+
+  </ul>
 </main>
 
-<nav class="nav">
+<nav class="nav" aria-label="Sections">
   <a href="#" aria-current="page">Today</a>
   <a href="#">Bills</a>
   <a href="#">The Gap</a>
   <a href="#">Me</a>
 </nav>
 
-<p class="note">
-  <b>Design mock — sample data.</b> Surface: <b>Operate</b> (with Compare secondary).
-  School: <b>A+C fusion</b> — the form of an official ballot, rendered procedurally.
-  Bar length <em>is</em> the data; the signal-coloured tail on the lower bar is the gap, and it is
-  the only thing on the page allowed to carry colour (open/closed state is carried by form, not hue).
-  Tabular figures throughout so the columns align.
-</p>
+<footer class="doc">
+  <p class="note">
+    <b>Design mock — sample data.</b> Surface: <b>Operate</b> (with Compare secondary).
+    School: <b>A+C fusion</b> — the form of an official ballot, rendered procedurally.
+    Bar length <em>is</em> the data; the signal-coloured tail on the lower bar is the gap, and it is
+    the only thing on the page allowed to carry colour (open/closed state is carried by form, not hue).
+    The bars are hidden from assistive technology; each bill carries a spoken equivalent of its tallies.
+  </p>
+</footer>
 
-<div class="tweaks">
+<aside class="tweaks" aria-label="Display options">
   <button id="t-density" aria-pressed="false">Compact</button>
   <button id="t-invert"  aria-pressed="false">Ink</button>
-</div>
+</aside>
 
 <script>
   const root = document.documentElement;

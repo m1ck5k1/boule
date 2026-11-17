@@ -116,15 +116,31 @@ nothing looping, nothing that delays the user. Respect `prefers-reduced-motion`.
 
 ---
 
-## 8. Files
+## 8. Accessibility
+
+- **The bars are decoration; the numbers are the data.** Every bar block is `aria-hidden`,
+  and each record carries a visually-hidden sentence with the real figures *and* the gap.
+- **Nothing is conveyed by colour alone.** The gap is red *and* labelled *and* positioned;
+  open/closed state is carried by form, not hue.
+- **Distinct accessible name per control.** Three "Put it to the vote" buttons must not read
+  identically to a screen reader — each carries the bill it belongs to.
+- **One `<h1>`, real landmarks, a skip link, 44px hit targets, visible focus,**
+  `prefers-reduced-motion` honoured.
+- **Automated audit is the floor, not the proof.** `axe-core` must report zero violations on
+  every screen; a real screen-reader pass is still required. See [`ROADMAP.md`](ROADMAP.md).
+
+---
+
+## 9. Files
 
 - `design/front-page.html` — the front page mock (self-contained; `?ink=1` for dark mode).
   Sample data, clearly labelled.
 
 ---
 
-## 9. Changelog
+## 10. Changelog
 
 | Date | Change |
 |---|---|
+| 2026-11-17 | Accessibility pass. Added `<h1>`, landmarks, skip link, spoken equivalents for every tally, distinct button names, 44px targets. `axe-core`: 0 violations (paper + ink). Added §8. |
 | 2026-11-17 | System established. A+C fusion adopted; E and F rejected. The gap drawn as a tail on the official bar after a bordered caliper was found to read as a selection state. Colour law tightened so `--signal` is the gap only. |
