@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boule — front page (A+C fusion mock)</title>
+<style>
+/* ============================================================
+   BOULE — design tokens
+   School: A (public-information / ballot vernacular)
+         + C (data-native / procedural)
+   Rule: colour = meaning, never mood. One signal colour, reserved
+   for the gap ONLY. If all styling were removed, the two numbers
+   must still be the loudest thing on the page.
+   ============================================================ */
+:root{
+  --paper:      #FAF9F6;
+  --ink:        #14130F;
+  --ink-2:      #4A463D;   /* secondary text */
+  --rule:       #D9D5CC;   /* hairlines */
+  --rule-hard:  #14130F;
+  --signal:     #C8442A;   /* THE GAP. nothing else may use this. */
+  --track:      #E7E3DA;
+
+  --sans: "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --gap: 28px;
+  --ds:  0.14em;           /* letterspacing for caps labels */
+}
+html.invert{
+  --paper:      #14130F;
+  --ink:        #F2F0EA;
+  --ink-2:      #A9A296;
+  --rule:       #35322B;
+  --rule-hard:  #F2F0EA;
+  --track:      #26241E;
+  --signal:     #E4643F;
+}
+html.compact{ --gap: 14px; }
+
+*{ box-sizing:border-box; }
+html,body{ margin:0; }
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:var(--sans);
+  font-variant-numeric: tabular-nums;   /* mandatory: the gap is unreadable otherwise */
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---- masthead: a document header, not a hero ---- */
+.masthead{
+  border-bottom:2px solid var(--rule-hard);
+  padding:14px var(--gap) 10px;
+  display:flex; align-items:baseline; gap:18px; flex-wrap:wrap;
+}
+.wordmark{
+  font-weight:700; font-size:22px; letter-spacing:.30em;
+  text-transform:uppercase; line-height:1;
+}
+.masthead .tag{
+  font-size:11.5px; color:var(--ink-2); letter-spacing:.02em; flex:1 1 320px;
+  line-height:1.35;
+}
+.signin{
+  font-size:11px; letter-spacing:var(--ds); text-transform:uppercase;
+  border:1px solid var(--rule-hard); background:none; color:inherit;
+  padding:8px 14px; min-height:36px; cursor:pointer; font-family:inherit;
+}
+.signin:hover{ background:var(--rule-hard); color:var(--paper); }
+
+/* ---- dateline ---- */
+.dateline{
+  display:flex; gap:18px; align-items:baseline; flex-wrap:wrap;
+  padding:12px var(--gap); border-bottom:1px solid var(--rule);
+  font-size:11px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2);
+}
+.dateline b{ color:var(--ink); letter-spacing:var(--ds); }
+
+/* ---- the ledger ---- */
+.ledger{ border-bottom:1px solid var(--rule); }
+.bill{
+  display:grid;
+  grid-template-columns: minmax(230px,1fr) minmax(300px,1.35fr) auto;
+  gap:22px; align-items:center;
+  padding:20px var(--gap);
+  border-top:1px solid var(--rule);
+}
+.bill:first-child{ border-top:none; }
+
+/* identity */
+.bill-id{ font-family:var(--mono); font-size:12px; letter-spacing:.06em; }
+.bill-title{ font-size:16px; line-height:1.25; margin:3px 0 7px; }
+.stage{
+  font-size:10.5px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2);
+}
+.stage .dot{ display:inline-block; width:5px; height:5px; border:1px solid var(--ink-2); margin-right:6px; vertical-align:0; }
+.stage.open .dot{ background:var(--ink); border-color:var(--ink); }
+
+/* tallies — the layout IS the data */
+.tallies{ position:relative; }
+.trow{ display:grid; grid-template-columns:74px 1fr 52px 62px; gap:10px; align-items:center; }
+.trow + .trow{ margin-top:7px; }
+.tlabel{
+  font-size:10px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2);
+}
+.track{ background:var(--track); height:14px; position:relative; }
+.fill{ position:absolute; inset:0 auto 0 0; width:var(--p); background:var(--ink); }
+.fill.off{ background:var(--ink-2); }
+.tpct{ font-size:13px; font-weight:600; text-align:right; }
+.tcount{ font-size:11.5px; color:var(--ink-2); text-align:right; font-family:var(--mono); }
+
+/* the gap — drawn, not decorated. The official bar carries a signal-coloured
+   TAIL that reaches the public bar's end. The tail itself IS the difference:
+   no box, no border, nothing that could read as a selection state. */
+.gapfill{
+  position:absolute; top:0; bottom:0;
+  left:var(--a); width:calc(var(--b) - var(--a));
+  background:var(--signal);
+}
+.delta{
+  font-family:var(--mono); font-size:12px; color:var(--signal); font-weight:700;
+  letter-spacing:.02em;
+}
+.nogap{ font-size:11px; color:var(--ink-2); font-style:italic; }
+
+/* action */
+.act{ text-align:right; }
+.vote{
+  font-family:inherit; font-size:11.5px; letter-spacing:var(--ds); text-transform:uppercase;
+  background:var(--ink); color:var(--paper); border:1px solid var(--ink);
+  padding:13px 18px; min-height:46px; cursor:pointer; white-space:nowrap;
+}
+.vote:hover{ background:var(--paper); color:var(--ink); }
+.vote:focus-visible{ outline:2px solid var(--signal); outline-offset:2px; }
+.voted{
+  font-size:10.5px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2);
+  font-weight:700;
+}
+
+/* ---- nav: text, like a form footer ---- */
+.nav{
+  display:flex; gap:26px; padding:16px var(--gap) 40px; flex-wrap:wrap;
+  border-top:1px solid var(--rule);
+}
+.nav a{
+  font-size:11px; letter-spacing:var(--ds); text-transform:uppercase;
+  color:var(--ink-2); text-decoration:none; padding:6px 0;
+}
+.nav a[aria-current]{ color:var(--ink); border-bottom:2px solid var(--ink); }
+.nav a:hover{ color:var(--ink); }
+
+.note{
+  padding:0 var(--gap) 46px; font-size:11px; color:var(--ink-2); line-height:1.5; max-width:64ch;
+}
+.note b{ color:var(--ink); }
+
+/* ---- tweaks ---- */
+.tweaks{
+  position:fixed; right:12px; bottom:12px; z-index:9;
+  border:1px solid var(--rule-hard); background:var(--paper);
+  font-size:10.5px; letter-spacing:var(--ds); text-transform:uppercase;
+  display:flex; gap:0;
+}
+.tweaks button{
+  font-family:inherit; font-size:inherit; letter-spacing:inherit; text-transform:inherit;
+  background:none; color:var(--ink); border:0; border-left:1px solid var(--rule);
+  padding:9px 12px; cursor:pointer;
+}
+.tweaks button:first-child{ border-left:0; }
+.tweaks button[aria-pressed="true"]{ background:var(--ink); color:var(--paper); }
+
+/* ---- responsive ---- */
+@media (max-width:860px){
+  .bill{ grid-template-columns:1fr; gap:14px; }
+  .act{ text-align:left; }
+  .trow{ grid-template-columns:64px 1fr 44px; }
+  .tcount{ display:none; }
+}
+@media (prefers-reduced-motion:no-preference){
+  .fill{ transition:width .35s ease; }
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wordmark">Boule</div>
+  <p class="tag">A second tally that runs beside the real one, so the gap becomes visible.</p>
+  <button class="signin">Sign in</button>
+</header>
+
+<div class="dateline">
+  <span>Today — <b>Tue 17 Nov 2026</b></span>
+  <span>Open for a vote: <b>3</b></span>
+</div>
+
+<main class="ledger">
+
+  <!-- 1. both tallies exist -> draw the gap -->
+  <section class="bill">
+    <div>
+      <div class="bill-id">H.R. 10983</div>
+      <h2 class="bill-title">Digital Privacy Amendment Act</h2>
+      <div class="stage open"><span class="dot"></span>Passed House → Senate</div>
+    </div>
+    <div class="tallies">
+      <div class="trow">
+        <span class="tlabel">Public</span>
+        <span class="track"><span class="fill" style="--p:68%"></span></span>
+        <span class="tpct">68%</span>
+        <span class="tcount">1,204</span>
+      </div>
+      <div class="trow">
+        <span class="tlabel">Official</span>
+        <span class="track"><span class="fill off" style="--p:51.4%"></span><span class="gapfill" style="--a:51.4%;--b:68%"></span></span>
+        <span class="tpct">51%</span>
+        <span class="tcount">219–207</span>
+      </div>
+      <div style="margin-top:8px"><span class="delta">Δ 17 points</span></div>
+    </div>
+    <div class="act"><button class="vote">Put it to the vote</button></div>
+  </section>
+
+  <!-- 2. no official vote yet -> the gap cannot be drawn honestly -->
+  <section class="bill">
+    <div>
+      <div class="bill-id">S. 4412</div>
+      <h2 class="bill-title">Federal Waterways Reauthorization</h2>
+      <div class="stage open"><span class="dot"></span>Reported by committee</div>
+    </div>
+    <div class="tallies">
+      <div class="trow">
+        <span class="tlabel">Public</span>
+        <span class="track"><span class="fill" style="--p:12%"></span></span>
+        <span class="tpct">12%</span>
+        <span class="tcount">88</span>
+      </div>
+      <div class="trow">
+        <span class="tlabel">Official</span>
+        <span class="track"></span>
+        <span class="tpct">—</span>
+        <span class="tcount">—</span>
+      </div>
+      <div style="margin-top:8px"><span class="nogap">No recorded vote yet — no gap to report.</span></div>
+    </div>
+    <div class="act"><button class="vote">Put it to the vote</button></div>
+  </section>
+
+  <!-- 3. chamber voted against; public disagrees -> the widest gap -->
+  <section class="bill">
+    <div>
+      <div class="bill-id">H.J.Res. 88</div>
+      <h2 class="bill-title">Continuing Appropriations, FY2027</h2>
+      <div class="stage"><span class="dot"></span>Failed Senate — vote closed</div>
+    </div>
+    <div class="tallies">
+      <div class="trow">
+        <span class="tlabel">Public</span>
+        <span class="track"><span class="fill" style="--p:74%"></span></span>
+        <span class="tpct">74%</span>
+        <span class="tcount">3,406</span>
+      </div>
+      <div class="trow">
+        <span class="tlabel">Official</span>
+        <span class="track"><span class="fill off" style="--p:48.5%"></span><span class="gapfill" style="--a:48.5%;--b:74%"></span></span>
+        <span class="tpct">48%</span>
+        <span class="tcount">48–51</span>
+      </div>
+      <div style="margin-top:8px"><span class="delta">Δ 26 points</span></div>
+    </div>
+    <div class="act"><span class="voted">Record closed</span></div>
+  </section>
+
+</main>
+
+<nav class="nav">
+  <a href="#" aria-current="page">Today</a>
+  <a href="#">Bills</a>
+  <a href="#">The Gap</a>
+  <a href="#">Me</a>
+</nav>
+
+<p class="note">
+  <b>Design mock — sample data.</b> Surface: <b>Operate</b> (with Compare secondary).
+  School: <b>A+C fusion</b> — the form of an official ballot, rendered procedurally.
+  Bar length <em>is</em> the data; the signal-coloured tail on the lower bar is the gap, and it is
+  the only thing on the page allowed to carry colour (open/closed state is carried by form, not hue).
+  Tabular figures throughout so the columns align.
+</p>
+
+<div class="tweaks">
+  <button id="t-density" aria-pressed="false">Compact</button>
+  <button id="t-invert"  aria-pressed="false">Ink</button>
+</div>
+
+<script>
+  const root = document.documentElement;
+  function toggle(btn, cls){
+    btn.addEventListener('click', () => {
+      const on = btn.getAttribute('aria-pressed') !== 'true';
+      btn.setAttribute('aria-pressed', String(on));
+      root.classList.toggle(cls, on);
+      try { localStorage.setItem(cls, on ? '1' : '0'); } catch(e){}
+    });
+  }
+  const density = document.getElementById('t-density');
+  const invert  = document.getElementById('t-invert');
+  toggle(density, 'compact'); toggle(invert, 'invert');
+  try {
+    if (localStorage.getItem('compact') === '1'){ density.setAttribute('aria-pressed','true'); root.classList.add('compact'); }
+    if (localStorage.getItem('invert')  === '1'){ invert.setAttribute('aria-pressed','true');  root.classList.add('invert'); }
+  } catch(e){}
+  try {
+    if (new URLSearchParams(location.search).has('ink')){
+      invert.setAttribute('aria-pressed','true'); root.classList.add('invert');
+    }
+  } catch(e){}
+</script>
+</body>
+</html>
