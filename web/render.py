@@ -120,6 +120,32 @@ def stub_page(path: str, base_path: str = "") -> str:
     return page(f"Boule — {path.strip('/')}", body, label, base_path=base_path)
 
 
+def confirm_vote(bill_label: str, title: str, choice: str, hidden: str,
+                 base_path: str = "") -> str:
+    """S3 — 'click once, click to confirm'.
+
+    A choice is not a vote. Nothing is written until THIS page is submitted, so a
+    stray click on the ledger cannot record a ballot.
+    """
+    word = "for" if choice == "yea" else "against"
+    body = f"""
+<main id="main">
+  <section class="confirm" aria-labelledby="c-h">
+    <h1 id="c-h" class="confirm-h">Confirm your vote</h1>
+    <p class="cbill"><b>{esc(bill_label)}</b> <span class="cs">{esc(title)}</span></p>
+    <p class="cchoice">You are about to vote <b>{esc(choice.upper())}</b> ({word}) on this bill.
+      This will be recorded and cannot be edited.</p>
+    <form class="votebox confirm" method="post" action="/api/vote">
+      {hidden}
+      <button type="submit" class="vote cf">Confirm {esc(choice.upper())}</button>
+      <a class="cancel" href="{esc(base_path)}/">Cancel</a>
+    </form>
+  </section>
+</main>
+"""
+    return page("Boule — confirm your vote", body, "", base_path)
+
+
 def render_route(path: str, con, today: str, base_path: str = "") -> str:
     """One renderer for the server AND the static build.
 
@@ -173,12 +199,41 @@ def masthead(dateline_bits: list[str]) -> str:
 """
 
 
-def bill_row(row: sqlite3.Row) -> str:
+def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict) -> str:
     bill_type = (row["bill_type"] or "").upper()
     number = row["number"]
     title = row["title"] or "(no title)"
     stage = stage_text(row["stage"], row["chamber"], row["current_chamber"])
     label = f"{bill_type} {number}"
+
+    yea = int(tally.get("yea", 0))
+    nay = int(tally.get("nay", 0))
+    total = yea + nay
+    if total:
+        pct = round(100 * yea / total)
+        public_pct, public_count = f"{pct}%", f"{yea} yea · {nay} nay"
+        sr = (f"Public tally: {yea} for, {nay} against — {total} cast, {pct}% in favour. "
+              "No official tally recorded yet, so no gap can be reported.")
+    else:
+        public_pct, public_count = "—", "—"
+        sr = ("No public tally yet. No official tally recorded yet. "
+              "No gap can be reported without both.")
+
+    # S3 — the ballot box. A plain form POST, no JS: the vote is the one write,
+    # and it goes to the server, which stamps it and appends it.
+    if version_code:
+        vote_ui = f"""<form class="votebox" method="post" action="/api/vote">
+        <input type="hidden" name="congress" value="{esc(row['congress'])}">
+        <input type="hidden" name="bill_type" value="{esc((row['bill_type'] or '').lower())}">
+        <input type="hidden" name="number" value="{esc(number)}">
+        <input type="hidden" name="version_code" value="{esc(version_code)}">
+        <input type="hidden" name="next" value="/">
+        <button type="submit" class="vote" name="choice" value="yea">Yea</button>
+        <button type="submit" class="vote" name="choice" value="nay">Nay</button>
+      </form>"""
+    else:
+        vote_ui = '<span class="voted">Voting not open — no text version</span>'
+
     return f"""    <li><article class="bill" aria-labelledby="b-{esc(bill_type)}-{esc(number)}">
       <div>
         <div class="bill-id">{esc(label)}</div>
@@ -186,16 +241,13 @@ def bill_row(row: sqlite3.Row) -> str:
         <p class="stage"><span class="dot" aria-hidden="true"></span>{esc(stage)}</p>
       </div>
 
-      <p class="sr-only">
-        No public tally yet — voting is not open. No official tally recorded yet.
-        No gap can be reported without both.
-      </p>
+      <p class="sr-only">{esc(sr)}</p>
       <div class="tallies" aria-hidden="true">
         <div class="trow">
           <span class="tlabel">Public</span>
           <span class="track"></span>
-          <span class="tpct">—</span>
-          <span class="tcount">—</span>
+          <span class="tpct">{esc(public_pct)}</span>
+          <span class="tcount">{esc(public_count)}</span>
         </div>
         <div class="trow">
           <span class="tlabel">Official</span>
@@ -203,11 +255,11 @@ def bill_row(row: sqlite3.Row) -> str:
           <span class="tpct">—</span>
           <span class="tcount">—</span>
         </div>
-        <p class="nogap">No tallies yet — no gap to report.</p>
+        <p class="nogap">No gap can be reported without both tallies.</p>
       </div>
 
       <div class="act">
-        <span class="voted">Voting not open</span>
+        {vote_ui}
       </div>
     </article></li>"""
 
@@ -227,15 +279,38 @@ def today_page(con: sqlite3.Connection, today: str, base_path: str = "") -> str:
     rows = con.execute(
         """
         SELECT b.congress, b.bill_type, b.number, b.title, b.latest_action,
-               b.latest_action_date, s.stage, s.chamber, s.current_chamber
+               b.latest_action_date, s.stage, s.chamber, s.current_chamber,
+               (SELECT v.version_code FROM bill_versions v
+                 WHERE v.congress = b.congress AND v.bill_type = b.bill_type
+                   AND v.number = b.number
+                 ORDER BY v.first_seen DESC, v.version_id DESC LIMIT 1) AS version_code
           FROM bills b
           LEFT JOIN stages s USING (congress, bill_type, number)
          ORDER BY COALESCE(b.latest_action_date, '') DESC, b.bill_type, b.number
         """
     ).fetchall()
 
+    # Public tallies, keyed to the exact (bill, version) being voted on. If the
+    # votes table is absent (a pre-S3 database), every tally is simply empty.
+    counts: dict = {}
+    try:
+        for r in con.execute(
+            "SELECT congress, bill_type, number, version_code, choice, COUNT(*) "
+            "FROM votes GROUP BY 1, 2, 3, 4, 5"
+        ).fetchall():
+            counts[(r[0], r[1], r[2], r[3], r[4])] = r[5]
+    except sqlite3.OperationalError:
+        pass
+
+    def tally_for(r: sqlite3.Row) -> dict:
+        vc = r["version_code"]
+        if not vc:
+            return {}
+        return {c: counts.get((r["congress"], r["bill_type"], r["number"], vc, c), 0)
+                for c in ("yea", "nay")}
+
     if rows:
-        ledger = "\n".join(bill_row(r) for r in rows)
+        ledger = "\n".join(bill_row(r, r["version_code"], tally_for(r)) for r in rows)
     else:
         ledger = ('    <li class="empty">No bills ingested yet. Run '
                   '<code>python3 engine/poll.py</code>.</li>')

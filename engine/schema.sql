@@ -91,3 +91,37 @@ BEGIN SELECT RAISE(ABORT, 'actions is append-only: DELETE refused'); END;
 
 CREATE INDEX IF NOT EXISTS idx_actions_bill ON actions (congress, bill_type, number, action_date);
 CREATE INDEX IF NOT EXISTS idx_bills_update  ON bills (update_date DESC);
+
+-- S3 — the ballot box.
+--
+-- Append-only, for the same reason as `actions`: the public tally is a RECORD,
+-- not a field. A person changing their mind is a NEW row, never an edit — the
+-- old row stays, because a tally you can rewrite is not evidence.
+--
+-- Two inherited rules are enforced here:
+--   1. Keyed to a (bill, VERSION), never the bill alone (see header).
+--   2. `provenance` exists from the very first row. At S3 the only tier is
+--      'anonymous', but a later tier (S5 sign-in) must be unable to retro-label
+--      the history — so the column is not optional from the start.
+CREATE TABLE IF NOT EXISTS votes (
+  vote_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  congress     INTEGER NOT NULL,
+  bill_type    TEXT    NOT NULL,
+  number       INTEGER NOT NULL,
+  version_code TEXT    NOT NULL,          -- pins the vote to the exact text
+  choice       TEXT    NOT NULL CHECK (choice IN ('yea', 'nay')),
+  provenance   TEXT    NOT NULL DEFAULT 'anonymous',   -- tier; 'anonymous' at S3
+  voter_key    TEXT,                      -- pseudonymous key; NULL at S3, set at S5
+  cast_at      TEXT    NOT NULL,          -- SERVER stamp, never the client's word
+  ip_hash      TEXT,                      -- sha256(client ip); never the raw ip
+  FOREIGN KEY (congress, bill_type, number) REFERENCES bills
+);
+
+CREATE INDEX IF NOT EXISTS idx_votes_bill  ON votes (congress, bill_type, number, version_code);
+CREATE INDEX IF NOT EXISTS idx_votes_voter ON votes (voter_key) WHERE voter_key IS NOT NULL;
+
+CREATE TRIGGER IF NOT EXISTS votes_no_update BEFORE UPDATE ON votes
+BEGIN SELECT RAISE(ABORT, 'votes is append-only: UPDATE refused'); END;
+
+CREATE TRIGGER IF NOT EXISTS votes_no_delete BEFORE DELETE ON votes
+BEGIN SELECT RAISE(ABORT, 'votes is append-only: DELETE refused'); END;

@@ -233,3 +233,21 @@ h1.wordmark{
   .trow{ grid-template-columns:64px 1fr 54px; gap:10px; }
   .tcount{ grid-column:3; }
 }
+
+/* ---- S3: the ballot box ---- */
+.votebox{ display:inline-flex; gap:8px; align-items:center; margin:0; }
+.votebox .vote{ padding:11px 16px; min-height:44px; }
+.confirm{ display:block; max-width:56ch; margin:44px auto; padding:0 var(--gap); }
+.confirm-h{
+  font-size:20px; margin:0 0 16px; font-weight:700;
+  letter-spacing:var(--ds); text-transform:uppercase;
+}
+.cbill{ margin:0 0 8px; font-size:15px; }
+.cbill .cs{ color:var(--ink-2); }
+.cchoice{ margin:0 0 22px; color:var(--ink-2); font-size:13.5px; line-height:1.55; }
+.votebox.confirm{ display:flex; gap:16px; align-items:center; }
+.cancel{
+  font-size:11.5px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2);
+  text-decoration:none; border-bottom:1px solid var(--rule-hard); padding-bottom:2px;
+}
+.cancel:hover{ color:var(--ink); }
