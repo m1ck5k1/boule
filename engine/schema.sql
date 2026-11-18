@@ -125,3 +125,22 @@ BEGIN SELECT RAISE(ABORT, 'votes is append-only: UPDATE refused'); END;
 
 CREATE TRIGGER IF NOT EXISTS votes_no_delete BEFORE DELETE ON votes
 BEGIN SELECT RAISE(ABORT, 'votes is append-only: DELETE refused'); END;
+
+-- --- Anything with a lifetime lives OUTSIDE the append-only table ---------------
+-- `votes` refuses UPDATE and DELETE by trigger, which is exactly what makes it
+-- trustworthy -- and it also means nothing inside it can expire: a purge against it
+-- is not merely unwise, it is rejected outright. So the working values sit here,
+-- keyed to the reading, free to be purged. The bonus is that `votes` then holds
+-- nothing personal at all, and is publishable exactly as it stands.
+--
+-- NOTE: `votes.ip_hash` (above) is LEGACY from before this split and is no longer
+-- written. Retiring the column needs a table rebuild -- the triggers will not allow
+-- it to be dropped or nulled in place. The published allow-list excludes it.
+CREATE TABLE IF NOT EXISTS vote_nets (
+  vote_id      INTEGER PRIMARY KEY,      -- the reading this working value belongs to
+  ip_hash      TEXT    NOT NULL,         -- sha256(client ip); never the raw ip
+  retire_after TEXT    NOT NULL,         -- ISO-8601 UTC; the purge job deletes past this
+  FOREIGN KEY (vote_id) REFERENCES votes (vote_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_vote_nets_retire ON vote_nets (retire_after);

@@ -29,7 +29,7 @@ defensible: the harm it could do is bounded in time rather than archived for eve
 
 | Tier | What | Lifetime |
 |---|---|---|
-| **Evidence** — the published readings (the audit pack below) | the rows themselves, so anyone can recompute the tally | **a rolling window** — retired when it closes |
+| **Evidence** — the published readings (the audit pack below) | the rows themselves, so anyone can recompute the tally | **90 days**, then retired |
 | **Conclusions** — the published aggregates | the tally, the gap, per-day counts, state digests | **permanent** |
 | Internal counters | coarse region × bill × version × day × choice | permanent (a count holds nothing personal) |
 | The address hash | anti-abuse only | 30 days |
@@ -151,8 +151,9 @@ build:
 4. **NO FINE TIME** — every `day` is a date, never a datetime.
 5. **NO SMALL CELL** — every aggregate cell is either ≥ `k` or explicitly `withheld`.
 6. **SHUFFLED** — the export order is not the insertion order.
-7. **DATED** — the row-level release carries its own `retire_after`. Evidence expires; aggregates
-   do not. **A release with no expiry is not ready to publish.**
+7. **DATED** — the row-level release carries its own `retire_after`, set from the one configured
+   window (**90 days**). Evidence expires; aggregates do not. **A release with no expiry is not
+   ready to publish.**
 
 A failure is a **stop**, not a warning.
 
@@ -165,3 +166,4 @@ A failure is a **stop**, not a warning.
 | 2026-11-18 | Standard established. The device model settled; the ledger becomes a published artifact; the absolute no-identification rule adopted; `k = 10`; per-bill pseudonyms and day-granularity timestamps chosen as the anti-linkage device. |
 | 2026-11-18 | **Geography settled.** State-level is analytically the right grain (it is the unit the official record is territorial in — the Senate; town-level has no counterpart and is dropped). Geography is captured **internally only**, derived at ingest, folded into a counter and discarded — never a field on a row, never published. `ip_hash` given a **30-day TTL** and moved to a separate mutable `vote_nets` table, because expiry cannot live inside an append-only table. |
 | 2026-11-18 | **Corrected — expiry is the licence to publish, not internal hygiene.** The expiry exists so the ledger *can* be public, which makes publication the point and expiry the safeguard. Two tiers: **expiring evidence, permanent numbers.** The published readings are a rolling window; the aggregates — the tally, the gap, per-day counts, state digests — are permanent, because **the aggregate keeps the shape** and a burst is visible in it, so anomaly detection survives the retirement of the rows. State digests published at **`k = 50`**. Gate gained criterion 7: a release with no expiry is not ready to publish. |
+| 2026-11-18 | **Window set: 90 days.** The evidence retires 90 days after publication; aggregates, the 30-day address TTL and the counters are as above. Takes effect from a single configured constant — never a literal scattered through the code. |

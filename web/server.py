@@ -22,8 +22,16 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parent / "engine"))
 
 import render  # noqa: E402
+import retention  # noqa: E402
+
+
+def _hash_ip(addr: str | None) -> str:
+    """The client address, hashed. Never the raw value, never published."""
+    return hashlib.sha256((addr or "").encode()).hexdigest()[:32]
+
 
 STATIC = (HERE / "static").resolve()
 CONTENT_TYPES = {
@@ -155,18 +163,26 @@ class Handler(BaseHTTPRequestHandler):
             )
             return self._send(200, render.confirm_vote(label, title, choice, hidden))
 
-        # The stamp is the server's, never the client's word; the IP is hashed,
-        # never stored raw. Provenance is 'anonymous' at S3 (S5 adds the tier).
+        # The stamp is the server's, never the client's word. Provenance is 'anonymous'
+        # at S3 (S5 adds the tier).
         cast_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
-        ip_hash = hashlib.sha256((self.client_address[0] or "").encode()).hexdigest()[:32]
+        ip_hash = _hash_ip(self.client_address[0])
 
         con = self._db_rw()
         try:
-            con.execute(
+            # The reading goes into the append-only table, which holds nothing personal
+            # and therefore nothing that can expire. The single retained value -- the
+            # hashed address -- goes to `vote_nets`, which is mutable and purged on its
+            # own clock. (DATA.md: expiry is the licence to publish, not hygiene.)
+            cur = con.execute(
                 "INSERT INTO votes "
-                "(congress, bill_type, number, version_code, choice, provenance, cast_at, ip_hash) "
-                "VALUES (?, ?, ?, ?, ?, 'anonymous', ?, ?)",
-                (congress, bill_type, number, version_code, choice, cast_at, ip_hash),
+                "(congress, bill_type, number, version_code, choice, provenance, cast_at) "
+                "VALUES (?, ?, ?, ?, ?, 'anonymous', ?)",
+                (congress, bill_type, number, version_code, choice, cast_at),
+            )
+            con.execute(
+                "INSERT INTO vote_nets (vote_id, ip_hash, retire_after) VALUES (?, ?, ?)",
+                (cur.lastrowid, ip_hash, retention.retire_after(retention.ADDRESS_DAYS)),
             )
             con.commit()
         except sqlite3.Error as exc:
