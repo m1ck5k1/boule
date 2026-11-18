@@ -99,9 +99,25 @@ pass/fail test, not a demo. No stage starts until the previous gate passes.
 | **S2** | front page renders from the DB, not from HTML | edit a DB row → the page changes **without touching HTML** | ✅ **done — gate passed** |
 | **S3** | ballot box: append-only `votes`, `POST /api/vote`, server-side stamp, keyed `(bill, version)` | changing a vote **adds a row and never mutates the old one**; no `UPDATE`/`DELETE` can run (DB trigger) | ⬜ |
 | **S4** | gap computed from public ⨯ official | the gap equals `public% − official%` on a known bill; a bill with **no** official vote renders `—`, never `0` | ⬜ |
-| **S5** | identity + one-per-person | two accounts cannot double-vote the same `(bill, version)`; provenance tier visible | ⬜ |
-| **S6** | installable PWA (tailscale cert, manifest, service worker, icons) | "Add to Home Screen" **installs** — opens without browser chrome | ⬜ |
+| **S5** | identity + one-per-person | two accounts cannot double-vote the same `(bill, version)`; provenance tier visible | ⬜ **needs HTTPS first** |
+| **S6** | installable PWA (manifest, service worker, icons) | "Add to Home Screen" **installs** — opens without browser chrome | ⬜ |
 | **S7** | public deploy (VPS + domain) | first non-tailnet visitor can vote | ⬜ |
+
+### Two ordering corrections, both forced by verified constraints
+
+**1. HTTPS must move ahead of S5.** Google OAuth redirect URIs *must* use HTTPS, and hosts
+**cannot be raw IP addresses** — localhost is the only exemption. So neither
+`http://mbp9.tail24a97e.ts.net:8123` nor `100.109.45.107` can ever be a redirect URI, and S5
+cannot be tested anywhere except localhost until `tailscale cert` (or a real domain) provides
+TLS. The HTTPS step therefore leaves S6 and becomes a prerequisite of S5.
+
+**2. S3 must record provenance from its first row.** Even if the only tier available at S3 is
+`anonymous`, the column has to exist from the start. Otherwise S5 arrives and there is a body of
+already-cast votes that cannot be attributed — and they would have to be discarded or
+retro-labelled, right when the tally is starting to matter.
+
+**Consequence for the exit criteria:** the phase exit asks for *"a real person can open it, sign
+in, vote on a real bill, and see both tallies"* — so sign-in is part of the minimum, not a nicety.
 
 **Order rationale:** each stage is falsifiable on its own and none depends on a later one. S1–S2
 give an honest read-only site before a single vote exists — the site is useful with zero voters.

@@ -87,12 +87,17 @@ def page(title: str, body: str, current_nav: str = "Today") -> str:
 
 
 def masthead(dateline_bits: list[str]) -> str:
+    """No sign-in control until sign-in exists.
+
+    A button that does nothing is a lie, and this page's whole argument is that it
+    does not claim things it cannot show. The mock had one; the served page does
+    not, until S5 gives it something to do.
+    """
     tail = "".join(f"<span>{b}</span>" for b in dateline_bits)
     return f"""<header class="doc">
   <div class="masthead">
     <h1 class="wordmark">Boule <span class="pron" aria-hidden="true">/ˈbuːli/</span></h1>
     <p class="tag">A second tally that runs beside the real one, so the gap becomes visible.</p>
-    <button class="signin">Sign in</button>
   </div>
   <div class="dateline">{tail}</div>
 </header>
