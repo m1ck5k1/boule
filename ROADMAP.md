@@ -95,7 +95,7 @@ pass/fail test, not a demo. No stage starts until the previous gate passes.
 | Stage | Build | Gate — the test that must pass | State |
 |---|---|---|---|
 | **S0** | preview served by a supervised service | kill the process → systemd replaces it; survives reboot; HTTP 200 over tailnet | ✅ **done** |
-| **S1** | Congress.gov client → SQLite (`bills`, `bill_versions`, `actions`) | for one real bill the DB holds its actions in order and the derived **stage matches congress.gov** | ⬜ next |
+| **S1** | Congress.gov client → SQLite (`bills`, `bill_versions`, `actions`) | for one real bill the DB holds its actions in order and the derived **stage matches congress.gov** | 🟡 code complete — live gate blocked on key |
 | **S2** | front page renders from the DB, not from HTML | edit a DB row → the page changes **without touching HTML** | ⬜ |
 | **S3** | ballot box: append-only `votes`, `POST /api/vote`, server-side stamp, keyed `(bill, version)` | changing a vote **adds a row and never mutates the old one**; no `UPDATE`/`DELETE` can run (DB trigger) | ⬜ |
 | **S4** | gap computed from public ⨯ official | the gap equals `public% − official%` on a known bill; a bill with **no** official vote renders `—`, never `0` | ⬜ |

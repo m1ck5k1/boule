@@ -11,3 +11,7 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+engine/boule.db
+engine/boule.db-wal
+engine/boule.db-shm
+engine/__pycache__/
