@@ -48,26 +48,32 @@
       coarsened to the <em>day</em> before anything is published</li>
   <li>a provenance label: <code>device</code> (the installed-app key above) or
       <code>anonymous</code> (a browser, standing on nothing durable)</li>
-  <li>a hash of your network address, held by the server only to spot abuse —
-      <strong>never published, in any form, at any granularity</strong></li>
+  <li>a hash of your network address, held by the server only to spot a burst of
+      readings from one network. It is <strong>never published</strong>, and it
+      <strong>expires 30 days after the reading</strong>.</li>
 </ul>
 
 <h4>Technical data</h4>
 <p>
   Our server necessarily sees the IP address of any request, as every web server
-  does. See "Not yet decided" below for how long we keep it.
+  does. It is hashed immediately, kept only as a hash for <strong>30 days</strong> to
+  spot a burst of readings from one network, and then deleted. The raw address is
+  never written to the voting record.
+</p>
+<p>
+  From that request we also derive an <strong>approximate state</strong> — coarsely,
+  and sometimes wrongly (a VPN or a mobile network can put the estimate somewhere
+  else entirely). It is added to a <em>count</em> and immediately discarded: never
+  attached to a reading, and <strong>never published</strong>. The data is here to
+  help, not to be abused.
 </p>
 
-<h3>How we use Google user data</h3>
+<h3>No Google data, and no third parties</h3>
 <p>
-  For two things only: to show you your own voting record, and to label each vote
-  with its provenance tier so a reader can see how strongly identity was
-  established. That is the entire purpose.
-</p>
-<p>
-  <strong>Boule's use of information received from Google APIs will adhere to the
-  <a href="https://developers.google.com/terms/api-services-user-data-policy">Google
-  API Services User Data Policy</a>, including the Limited Use requirements.</strong>
+  Boule holds no Google data, because it never asks Google for anything. An earlier
+  draft of this policy described a Google sign-in; that plan was dropped, so nothing
+  here rests on it. There is no sign-in, no third-party account, and no data
+  received from any external API about you.
 </p>
 
 <h3>What we never do</h3>
@@ -75,9 +81,7 @@
   <li>No advertising, and no advertising identifiers.</li>
   <li>No selling, renting, or sharing personal data with anyone.</li>
   <li>No tracking you across other websites.</li>
-  <li>No transferring Google user data to third parties except as needed to provide
-      Boule, to comply with the law, or as part of a merger — and never for
-      advertising.</li>
+  <li>No third-party data of any kind, from Google or anyone else.</li>
   <li>No automated decision-making about you. Boule does not decide anything; that
       is the point of it.</li>
 </ul>
@@ -134,17 +138,17 @@
   they are settled:
 </p>
 <ul>
-  <li><strong>Whether the raw network address is discarded immediately</strong>, or
-      held briefly to spot abuse. What is already settled: it is kept only as a
-      hash, and it is never published.</li>
   <li><strong>Whether analytics are collected</strong>, and if so they will be
       aggregate and anonymous — never per-person.</li>
 </ul>
 <p>
   <strong>Settled since the first draft of this policy:</strong> no email is stored,
-  because none is collected; there is no account and no sign-in; a reading already
-  published stays published, because it carries nothing that could identify anyone;
-  and the published-dataset standard is now written down rather than deferred.
+  because none is collected; there is no account and no sign-in; the network address
+  is kept only as a hash and <strong>expires after 30 days</strong>; location is
+  derived coarsely, counted, discarded, and <strong>never published</strong>; a
+  reading already published stays published, because it carries nothing that could
+  identify anyone; and the published-dataset standard is written down rather than
+  deferred.
 </p>
 
 <h3>Changes</h3>

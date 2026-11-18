@@ -33,9 +33,38 @@ single out one person is not anonymous, and this project does not get to use a w
 | **User agent, headers, referrer** | Quasi-identifiers; a combination narrows a crowd to a person. |
 | **Precise timestamp (seconds)** | Time-to-the-second plus any other field is a fingerprint. The day is the finest granularity we publish. |
 | **Row order / insertion sequence** | The sequence is metadata. An export is shuffled, and no ordinal is carried. |
-| **Geography of any kind** | Country, region, timezone. All quasi-identifiers, all excluded. |
+| **Geography of any kind** | Country, region, timezone. All quasi-identifiers, all excluded. An approximate *state* may be derived at ingest — then folded into a count and discarded (below) — but it is never a field on a row and never published. |
 
 ---
+
+## Capture and retention — internal, and expiring
+
+Geography is **captured, never stored as a record, and never published.**
+
+- **Derived at ingest, from the connection.** A bundled GeoIP table resolves the request's
+  approximate **state** — no third-party lookup, so the address never leaves the box.
+- **Folded into a counter, then discarded.** The state increments a
+  `(state, bill, version, day, choice)` count, and the per-reading value is **gone**. It is not a
+  column on any row, so there is nothing to link, leak or subpoena. This is the strongest form of
+  the rule: geography never becomes a per-reading fact at all.
+- **The address is a working value with a TTL.** `ip_hash` exists only to catch a burst of readings
+  from one network. It is held for **30 days**, then purged. *(What enforces one reading per device
+  is the **device key**, not the address.)*
+- **Expiry is a job, not an intention.** Every retained value carries a `retire_after` date; a
+  scheduled purge deletes what has expired, and says so in the log when it runs.
+
+**Two consequences, stated plainly.**
+
+1. **Per-reading geography is unrecoverable by design.** If the GeoIP table is later found wrong for
+   some period, that period's state splits cannot be corrected — the inputs are gone. That
+   irreversibility is the price of the guarantee, and it is the right way round.
+2. **Expiry collides with append-only — so separate them.** The `votes` table refuses `UPDATE` and
+   `DELETE` by trigger, so its contents *cannot* expire: a purge would simply be refused. The
+   address must therefore live in a **separate, mutable table** — `vote_nets(vote_id, ip_hash,
+   retire_after)` — which the purge may empty freely, while `votes` stays append-only and holds
+   nothing personal. The address becomes the only thing with a lifetime, and the only thing that
+   needs one.
+
 
 ## Published — the audit pack
 
@@ -98,3 +127,4 @@ A failure is a **stop**, not a warning.
 | Date | Change |
 |---|---|
 | 2026-11-18 | Standard established. The device model settled; the ledger becomes a published artifact; the absolute no-identification rule adopted; `k = 10`; per-bill pseudonyms and day-granularity timestamps chosen as the anti-linkage device. |
+| 2026-11-18 | **Geography settled.** State-level is analytically the right grain (it is the unit the official record is territorial in — the Senate; town-level has no counterpart and is dropped). Geography is captured **internally only**, derived at ingest, folded into a counter and discarded — never a field on a row, never published. `ip_hash` given a **30-day TTL** and moved to a separate mutable `vote_nets` table, because expiry cannot live inside an append-only table. |
