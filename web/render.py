@@ -15,6 +15,10 @@ from __future__ import annotations
 import html
 import sqlite3
 from datetime import date
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+LEGAL = ROOT / "legal"
 
 STAGE_LABEL = {
     "introduced": "Introduced",
@@ -80,10 +84,23 @@ def page(title: str, body: str, current_nav: str = "Today") -> str:
   visible.</b> This is the read-only build: bills and their stages are real and
   come from Congress.gov. Voting is not open yet, so no public tally and no gap
   are shown — an empty tally is a fact, a zero would be a claim.
+  <span class="legal-links"><a href="/privacy">Privacy</a></span>
 </footer>
 </body>
 </html>
 """
+
+
+def privacy_page() -> str:
+    """Serve the policy from legal/privacy.html — one source, no markdown step."""
+    body_html = (LEGAL / "privacy.html").read_text(encoding="utf-8")
+    body = masthead(["<b>Privacy</b> — what Boule collects, and what it never does"])
+    body += f"""
+<main id="main" class="legal">
+{body_html}
+</main>
+"""
+    return page("Boule — privacy policy", body, "")
 
 
 def masthead(dateline_bits: list[str]) -> str:

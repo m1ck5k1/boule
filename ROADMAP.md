@@ -119,6 +119,50 @@ retro-labelled, right when the tally is starting to matter.
 **Consequence for the exit criteria:** the phase exit asks for *"a real person can open it, sign
 in, vote on a real bill, and see both tallies"* — so sign-in is part of the minimum, not a nicety.
 
+### Identity prerequisites — corrected, and mostly not blocking
+
+**Boule is in the cheap lane.** Google's own consent-screen documentation: the requirement to be on
+a test-user allowlist, the warning screen, and the 7-day token expiry **do not apply** to apps that
+request only `openid` + `email` + `profile`. *"If your app uses Sign in with Google to authenticate
+users then this exception also applies."* Boule needs nothing beyond those three scopes, so:
+
+| | Needed for sign-in? | Needed for a logo on the consent screen? |
+|---|---|---|
+| OAuth consent screen configured | ✅ yes | ✅ yes |
+| Redirect URI on HTTPS, non-IP host | ✅ yes | ✅ yes |
+| **Privacy policy** | ⬜ no | ✅ yes |
+| **Homepage on a domain you own** | ⬜ no | ✅ yes |
+| **Search Console domain verification** | ⬜ no | ✅ yes |
+| Google verification review | ⬜ no | ✅ yes (brand) |
+
+So brand verification is **optional**, and the honest reason to do the policy and homepage anyway is
+that a project recording people's political opinions owes them one regardless of what a vendor
+requires — and any future sensitive scope makes it mandatory.
+
+**Done:** `legal/privacy.html` is written and served at `/privacy`, linked from the homepage footer
+(as Google requires), axe-clean. It names the exact three scopes, carries the required Limited Use
+sentence and a link to the Google API Services User Data Policy, and states plainly what is never
+done.
+
+**The append-only / erasure tension is resolved in writing.** Deleting an account destroys the
+identity link so the votes become permanently unlinkable, and the anonymous count stays. Changing a
+vote appends a new record rather than editing the old one. That is the only honest way to reconcile
+"never rewrite the record" with a right to erasure, and it needs to be in the policy, not discovered
+later.
+
+**Open, and listed in the policy as open** rather than promised: IP retention, whether an email is
+stored at all, retention of anonymised votes in an already-published dataset, and whether any
+analytics exist. The policy is marked **draft, not in force** until these are settled.
+
+**Only a human can clear these:** create the GCP project + OAuth client; verify `incidium.net` in
+Search Console with an account that owns the project; point a hostname at a machine with TLS.
+
+**Domain reconnaissance:** `incidium.net` is theirs, DNS on Cloudflare, host on OVH, and the apex
+serves the **live Incidium business site** — not to be touched. `*.incidium.net` is a **wildcard**,
+so `boule.incidium.net` resolving proves nothing; it returns **000** over HTTPS because no
+certificate exists for it. Google verifies the *top private domain*, so a homepage at
+`boule.incidium.net` is fine while ownership is verified once for `incidium.net`.
+
 **Order rationale:** each stage is falsifiable on its own and none depends on a later one. S1–S2
 give an honest read-only site before a single vote exists — the site is useful with zero voters.
 

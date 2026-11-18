@@ -95,6 +95,9 @@ class Handler(BaseHTTPRequestHandler):
                 con.close()
             return self._send(200, body)
 
+        if path == "/privacy":
+            return self._send(200, render.privacy_page())
+
         # /bills, /gap, /me are named in the nav but not built yet. Say so plainly
         # rather than pretending they work.
         if path in ("/bills", "/gap", "/me"):

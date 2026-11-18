@@ -185,6 +185,35 @@ h1.wordmark{
   line-height:1.5; max-width:78ch;
 }
 .note b{ color:var(--ink); }
+.legal-links{ display:block; margin-top:8px; }
+.legal-links a{
+  font-size:11px; letter-spacing:var(--ds); text-transform:uppercase;
+  color:var(--ink-2); text-decoration:none; border-bottom:1px solid var(--rule);
+  display:inline-block; padding:6px 0;
+}
+.legal-links a:hover{ color:var(--ink); border-color:var(--ink); }
+
+/* ---- legal pages: prose, measured, and readable ---- */
+.legal{ padding:8px var(--gap) 0; max-width:74ch; }
+.legal h2{ font-size:26px; font-weight:400; margin:22px 0 12px; }
+.legal h3{
+  font-size:11px; font-weight:700; letter-spacing:var(--ds); text-transform:uppercase;
+  margin:28px 0 10px; padding-top:14px; border-top:1px solid var(--rule);
+}
+.legal h4{ font-size:12px; font-weight:700; margin:18px 0 8px; }
+.legal p{ font-size:14px; line-height:1.6; margin:0 0 13px; }
+.legal .lede{ font-size:16px; line-height:1.5; color:var(--ink); }
+.legal ul{ margin:0 0 14px; padding-left:20px; }
+.legal li{ font-size:14px; line-height:1.55; margin-bottom:8px; }
+.legal code{
+  font-family:var(--mono); font-size:12.5px; background:var(--track);
+  padding:1px 5px;
+}
+.legal a{ color:var(--ink); }
+.legal .updated{
+  margin-top:26px; padding-top:12px; border-top:1px solid var(--rule);
+  font-size:11px; color:var(--ink-2); font-style:italic;
+}
 .empty{ padding:40px var(--gap); font-size:13px; color:var(--ink-2); }
 
 @media (max-width:860px){
