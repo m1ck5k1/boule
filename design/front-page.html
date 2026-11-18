@@ -59,7 +59,7 @@ body{
   font-size:12px; letter-spacing:var(--ds); text-transform:uppercase;
 }
 .skip:focus{ left:0; }
-:focus-visible{ outline:2px solid var(--signal); outline-offset:2px; }
+:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
 
 /* ---- masthead: a document header, not a hero ---- */
 header.doc{ border-bottom:2px solid var(--rule-hard); }
@@ -168,6 +168,18 @@ h1.wordmark{
   font-size:10.5px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2);
   font-weight:700;
 }
+/* The secondary action. The loud button only exists during a real vote window;
+   the rest of the time you may record an EARLY view, which forecasts rather than
+   measures. Hierarchy is by FORM (solid vs outline) — never by hue, because
+   --signal stays reserved for the gap. */
+.vote.early{
+  background:none; color:var(--ink); border:1px solid var(--rule-hard);
+}
+.vote.early:hover, .vote.early:active{ background:var(--track); }
+.actnote{
+  display:block; margin-top:7px; font-size:10px; color:var(--ink-2);
+  letter-spacing:.02em; line-height:1.35; max-width:26ch; margin-left:auto;
+}
 
 /* ---- schedule: future bills ---- */
 .sched{ border-bottom:1px solid var(--rule); }
@@ -244,6 +256,7 @@ footer.doc{ padding:20px var(--gap) 46px; }
 @media (max-width:860px){
   .bill{ grid-template-columns:1fr; gap:14px; }
   .act{ text-align:left; }
+  .actnote{ margin-left:0; max-width:none; }
   .srow{ grid-template-columns:1fr; gap:3px; align-items:start; }
   .sflag{ text-align:left; }
 }
@@ -284,12 +297,46 @@ footer.doc{ padding:20px var(--gap) 46px; }
   </div>
   <div class="dateline">
     <span>Today — <b>Tue 17 Nov 2026</b></span>
-    <span>Open for a vote: <b>3</b></span>
+    <span>Vote open: <b>1</b></span>
+    <span>Early views: <b>2</b></span>
   </div>
 </header>
 
 <main id="main">
   <ul class="ledger">
+
+    <!-- 0. OPEN — the only state that earns the loud button: a real vote window -->
+    <li><article class="bill" aria-labelledby="b0">
+      <div>
+        <div class="bill-id">H.R. 11042</div>
+        <h2 class="bill-title" id="b0">Coastline Resilience Funding</h2>
+        <p class="stage open"><span class="dot" aria-hidden="true"></span>On the floor — vote expected today</p>
+      </div>
+
+      <p class="sr-only">
+        Public tally 61 percent, 2,904 votes. No official tally yet — the recorded vote is in
+        progress. The gap cannot be drawn until the official tally is recorded.
+      </p>
+      <div class="tallies" aria-hidden="true">
+        <div class="trow">
+          <span class="tlabel">Public</span>
+          <span class="track"><span class="fill" style="--p:61%"></span></span>
+          <span class="tpct">61%</span>
+          <span class="tcount">2,904</span>
+        </div>
+        <div class="trow">
+          <span class="tlabel">Official</span>
+          <span class="track"></span>
+          <span class="tpct">—</span>
+          <span class="tcount">—</span>
+        </div>
+        <p class="nogap">Vote in progress — no official tally recorded yet.</p>
+      </div>
+
+      <div class="act">
+        <button class="vote" aria-label="Put it to the vote — H.R. 11042, Coastline Resilience Funding">Put it to the vote</button>
+      </div>
+    </article></li>
 
     <!-- 1. both tallies exist -> draw the gap -->
     <li><article class="bill" aria-labelledby="b1">
@@ -321,7 +368,8 @@ footer.doc{ padding:20px var(--gap) 46px; }
       </div>
 
       <div class="act">
-        <button class="vote" aria-label="Put it to the vote — H.R. 10983, Digital Privacy Amendment Act">Put it to the vote</button>
+        <button class="vote early" aria-label="Record a view — H.R. 10983, Digital Privacy Amendment Act, for the Senate stage">Record a view</button>
+        <span class="actnote">House vote closed. This view is held for the Senate stage.</span>
       </div>
     </article></li>
 
@@ -353,7 +401,8 @@ footer.doc{ padding:20px var(--gap) 46px; }
       </div>
 
       <div class="act">
-        <button class="vote" aria-label="Put it to the vote — S. 4412, Federal Waterways Reauthorization">Put it to the vote</button>
+        <button class="vote early" aria-label="Record a view — S. 4412, Federal Waterways Reauthorization">Record a view</button>
+        <span class="actnote">No official vote scheduled — a leaning, not a gap.</span>
       </div>
     </article></li>
 

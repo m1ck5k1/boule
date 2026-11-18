@@ -78,6 +78,24 @@ Inverted ("ink") mode swaps paper/ink; `--signal` lifts to `#E4643F` for contras
   the tagline on line 2.
 - **No icons.** Hierarchy comes from scale, weight, and rules.
 
+### The vote button — a three-state rule
+
+The button is **not always on**. It appears when Boule can name the official vote the public
+tally will be compared against, and its meaning changes with the stage:
+
+| State | Trigger (from `/actions`) | Control | Counts as |
+|---|---|---|---|
+| **Open** | version on the floor / called up, no `recordedVote` yet | solid **Put it to the vote** | the gap |
+| **Early** | bill live, no official vote scheduled | outline **Record a view** | a leaning, not a gap |
+| **Closed** | a `recordedVote` is present | none → **Record closed** | frozen |
+
+Hierarchy is carried by **form** (solid vs outline), never by hue. An early view can forecast but
+cannot measure — there is no official comparator to subtract it from. This is why the front page
+reads `Vote open: 1 · Early views: 2` rather than a single inflated count.
+
+**Focus rings are `--ink`, not `--signal`.** A red focus ring spends the gap colour on something
+that is not a gap, which breaks the colour law.
+
 ### Colour law
 
 - Paper and ink carry the structure.
