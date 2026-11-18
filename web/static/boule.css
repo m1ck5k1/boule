@@ -1,0 +1,206 @@
+/* Boule — the design system.
+   School: A + C fusion (public-information vernacular + data-native procedural).
+   Governing test: with all styling removed, the two numbers must still be the
+   loudest thing on the page.
+
+   Colour law: --signal is reserved for the gap and nothing else. If red is
+   decorating something that is not a gap, the design is wrong. */
+
+:root{
+  --paper:#FAF9F6; --ink:#14130F; --ink-2:#4A463D; --rule:#D9D5CC; --rule-hard:#14130F;
+  --signal:#C8442A; --track:#E7E3DA;
+  --sans:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --gap:28px; --ds:.14em;
+}
+html[data-mode="ink"]{
+  --paper:#14130F; --ink:#F2F0EA; --ink-2:#A9A296; --rule:#3A3730; --rule-hard:#F2F0EA;
+  --signal:#E4643F; --track:#26241E;
+}
+
+*{ box-sizing:border-box; }
+html{ background:var(--paper); }
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:14px; line-height:1.45;
+  font-variant-numeric:tabular-nums;
+  padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right);
+}
+a{ color:var(--ink); }
+:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+.sr-only{
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+}
+.skip{
+  position:absolute; left:-9999px; top:0; background:var(--ink); color:var(--paper);
+  padding:14px 16px; font-size:12px; letter-spacing:var(--ds); text-transform:uppercase;
+}
+.skip:focus{ left:0; }
+
+/* ---- masthead: a document header, not a hero ---- */
+header.doc{ border-bottom:2px solid var(--rule-hard); }
+.masthead{
+  display:grid; grid-template-columns:1fr auto; align-items:baseline;
+  gap:6px 18px; padding:14px var(--gap) 10px;
+}
+h1.wordmark{
+  grid-column:1; grid-row:1;
+  font-size:22px; font-weight:700; letter-spacing:.30em; text-transform:uppercase;
+  line-height:1; margin:0;
+}
+.wordmark .pron{
+  font-size:12px; font-weight:400; letter-spacing:0; text-transform:none;
+  color:var(--ink-2); margin-left:7px; vertical-align:2px; white-space:nowrap;
+}
+.masthead .tag{
+  grid-column:1 / -1; grid-row:2;
+  font-size:11.5px; color:var(--ink-2); letter-spacing:.02em; line-height:1.35; margin:0;
+}
+.signin{
+  grid-column:2; grid-row:1; justify-self:end;
+  font-family:inherit; font-size:11px; letter-spacing:var(--ds); text-transform:uppercase;
+  background:none; color:var(--ink); border:1px solid var(--rule-hard);
+  padding:11px 16px; min-height:44px; cursor:pointer;
+}
+.signin:hover{ background:var(--track); }
+.dateline{
+  display:flex; gap:20px; flex-wrap:wrap;
+  padding:0 var(--gap) 12px;
+  font-size:11px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2);
+}
+.dateline b{ color:var(--ink); font-weight:700; }
+
+/* ---- the ledger: the layout IS the data ---- */
+.ledger{ list-style:none; margin:0; padding:0; }
+.bill{
+  display:grid;
+  grid-template-columns:minmax(230px,1fr) minmax(300px,1.35fr) 190px;
+  gap:var(--gap); align-items:start;
+  padding:20px var(--gap); border-bottom:1px solid var(--rule);
+}
+.bill-id{ font-family:var(--mono); font-size:12px; letter-spacing:.06em; }
+.bill-title{ font-size:16px; font-weight:400; line-height:1.25; margin:3px 0 7px; }
+.bill-title a{ text-decoration:none; }
+.bill-title a:hover{ text-decoration:underline; }
+.stage{
+  font-size:10.5px; letter-spacing:var(--ds); text-transform:uppercase;
+  color:var(--ink-2); margin:0;
+}
+.stage .dot{
+  display:inline-block; width:5px; height:5px; border:1px solid var(--ink-2);
+  margin-right:6px; vertical-align:0;
+}
+.stage.open .dot{ background:var(--ink); border-color:var(--ink); }
+.stage .where{ color:var(--ink-2); }
+
+/* ---- tallies ---- */
+.tallies{ display:block; }
+.trow{
+  display:grid; grid-template-columns:78px 1fr 62px 86px;
+  gap:14px; align-items:center; margin-bottom:9px;
+}
+.tlabel{ font-size:10.5px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2); }
+.track{ background:var(--track); height:20px; position:relative; display:block; }
+.fill{ display:block; height:100%; background:var(--ink); width:var(--p,0%); }
+.fill.off{ background:var(--ink-2); }
+.gapfill{
+  position:absolute; top:0; height:100%; background:var(--signal);
+  left:var(--a); width:calc(var(--b) - var(--a));
+}
+.tpct{ font-size:19px; font-weight:700; text-align:right; }
+.tcount{ font-family:var(--mono); font-size:11.5px; color:var(--ink-2); text-align:right; }
+.delta{ margin:8px 0 0; font-family:var(--mono); font-size:12px; color:var(--signal); }
+.nogap{ margin:8px 0 0; font-size:11px; color:var(--ink-2); font-style:italic; }
+
+/* ---- action ---- */
+.act{ text-align:right; }
+.vote{
+  font-family:inherit; font-size:11.5px; letter-spacing:var(--ds); text-transform:uppercase;
+  background:var(--ink); color:var(--paper); border:1px solid var(--ink);
+  padding:13px 18px; min-height:46px; cursor:pointer; white-space:nowrap;
+}
+.vote:hover{ background:var(--paper); color:var(--ink); }
+.vote:active{ background:var(--rule); color:var(--ink); }
+.vote.early{ background:none; color:var(--ink); border:1px solid var(--rule-hard); }
+.vote.early:hover,.vote.early:active{ background:var(--track); }
+.vote[disabled]{ opacity:.45; cursor:not-allowed; }
+.actnote{
+  display:block; margin-top:7px; font-size:10px; color:var(--ink-2);
+  letter-spacing:.02em; line-height:1.35; max-width:26ch; margin-left:auto;
+}
+.voted{
+  font-size:10.5px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2);
+  font-weight:700;
+}
+
+/* ---- schedule ---- */
+.sched{ border-bottom:1px solid var(--rule); }
+.sched-h{
+  display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+  margin:0; padding:22px var(--gap) 12px;
+  font-size:11px; font-weight:700; letter-spacing:var(--ds); text-transform:uppercase;
+}
+.sched-h .sub{
+  font-weight:400; font-size:11.5px; letter-spacing:.02em;
+  text-transform:none; color:var(--ink-2);
+}
+.slist{ margin:0; padding:0; list-style:none; }
+.srow{
+  display:grid; grid-template-columns:118px minmax(210px,1fr) minmax(150px,.62fr) 92px;
+  gap:16px; align-items:baseline;
+  padding:12px var(--gap); border-top:1px solid var(--rule);
+}
+.sdate{ font-family:var(--mono); font-size:11.5px; white-space:nowrap; }
+.srow.undated .sdate{
+  font-family:var(--sans); font-size:10.5px; letter-spacing:var(--ds);
+  text-transform:uppercase; color:var(--ink-2);
+}
+.sbill{ font-size:13.5px; line-height:1.3; }
+.sbill .sid{ font-family:var(--mono); font-size:12px; letter-spacing:.06em; }
+.swhat{ font-size:11px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2); }
+.sflag{ text-align:right; }
+.sflag b{ font-size:10px; letter-spacing:var(--ds); text-transform:uppercase; }
+.sflag .set{ color:var(--ink); }
+.sflag .uns{ color:var(--ink-2); border:1px solid var(--rule); padding:3px 7px; }
+.snote{
+  margin:0; padding:14px var(--gap) 26px; font-size:11px; color:var(--ink-2);
+  line-height:1.5; max-width:74ch;
+}
+
+/* ---- nav + note ---- */
+.nav{
+  display:flex; gap:26px; flex-wrap:wrap;
+  padding:20px var(--gap); border-bottom:1px solid var(--rule);
+}
+.nav a{
+  font-size:11px; letter-spacing:var(--ds); text-transform:uppercase;
+  color:var(--ink-2); text-decoration:none;
+  display:inline-flex; align-items:center; min-height:44px; min-width:44px;
+}
+.nav a:hover{ color:var(--ink); }
+.nav a[aria-current]{ color:var(--ink); box-shadow:inset 0 -2px 0 var(--ink); }
+.note{
+  padding:16px var(--gap) 34px; font-size:11px; color:var(--ink-2);
+  line-height:1.5; max-width:78ch;
+}
+.note b{ color:var(--ink); }
+.empty{ padding:40px var(--gap); font-size:13px; color:var(--ink-2); }
+
+@media (max-width:860px){
+  .bill{ grid-template-columns:1fr; gap:14px; }
+  .act{ text-align:left; }
+  .actnote{ margin-left:0; max-width:none; }
+  .srow{ grid-template-columns:1fr; gap:3px; align-items:start; }
+  .sflag{ text-align:left; }
+}
+@media (max-width:600px){
+  :root{ --gap:18px; }
+  .masthead{ gap:4px 12px; padding:12px var(--gap) 10px; }
+  h1.wordmark{ font-size:20px; letter-spacing:.26em; }
+  .wordmark .pron{ font-size:11px; margin-left:5px; }
+  .masthead .tag{ font-size:11.5px; }
+  .bill-title{ font-size:17px; }
+  .trow{ grid-template-columns:64px 1fr 54px; gap:10px; }
+  .tcount{ grid-column:3; }
+}
