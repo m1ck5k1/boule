@@ -17,3 +17,8 @@ engine/boule.db-shm
 engine/__pycache__/
 dist/
 dist2/
+
+# editor swap files can contain secrets in plaintext
+*.swp
+*.swo
+.*.swp
