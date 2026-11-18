@@ -47,9 +47,15 @@ RULES: list[tuple[str, str | None, tuple[str, ...]]] = [
     ("passed_house", "house", (
         "passed/agreed to in house", "passed house", "passed, house",
     )),
+    # `failed` must mean THE MEASURE failed, not that a procedural motion failed.
+    # A failed cloture is a vote on whether to proceed, and the Senate routinely
+    # reconsiders — S 4784 (NDAA FY2027) was staged 'failed' this way while still
+    # being actively pursued. Such actions change nothing, so they match no rule
+    # and the bill keeps its previous stage. Also deliberately absent: "motion to
+    # table" and "reconsider", both of which can revive a bill.
     ("failed", None, (
-        "failed", "rejected", "cloture not invoked", "not invoked",
-        "motion to table", "motion to proceed rejected",
+        "failed of passage", "failed to pass", "failed passage",
+        "on passage failed", "failed on passage",
     )),
     ("reported", "house", (
         "reported by", "ordered to be reported", "placed on the union calendar",
@@ -65,6 +71,14 @@ RULES: list[tuple[str, str | None, tuple[str, ...]]] = [
         "introduced in",
     )),
 ]
+
+
+def _date_of(action: dict) -> str:
+    """Accept both shapes. The API returns `actionDate`; a DB row returns
+    `action_date`. Silently treating a missing date as '' collapses every match
+    into one tie, which then resolves by stage preference instead of recency —
+    that bug staged a bill awaiting Senate action as 'passed_house'."""
+    return (action.get("actionDate") or action.get("action_date") or "")
 
 
 def _chamber_of(action: dict) -> str | None:
@@ -113,20 +127,39 @@ def derive(actions: list[dict]) -> dict:
     for action in actions:
         hit = match(action.get("text", ""))
         if hit:
-            matches.append((action.get("actionDate") or "", _pref(hit[0]), hit, action))
+            matches.append((_date_of(action), _pref(hit[0]), hit, action))
 
     if not matches:
         return {"stage": "unknown", "chamber": None, "date": None, "basis": None}
 
     newest_date = max(m[0] for m in matches)
-    _, _, hit, action = max((m for m in matches if m[0] == newest_date),
-                            key=lambda m: m[1])
+    newest = max((m for m in matches if m[0] == newest_date), key=lambda m: m[1])
+    newest_stage = newest[2][0]
+
+    if newest_stage in TERMINAL:
+        # A terminal action is the end of the story and must not be masked by an
+        # earlier success.
+        chosen = newest
+    else:
+        # Otherwise report the FURTHEST milestone reached, not the latest one.
+        # Congress is bicameral: HR 2347 passed the House and now sits on the
+        # Senate calendar. "Senate calendar" ranks below "passed House" on a
+        # linear ladder, so reporting the latest action made the bill look like it
+        # had gone backwards. `chamber` below says where it is now.
+        positive = [m for m in matches if m[2][0] not in TERMINAL]
+        chosen = max(positive, key=lambda m: m[1]) if positive else newest
+
+    date, _, hit, action = chosen
     stage, chamber = hit
     return {
         "stage": stage,
         "chamber": chamber or _chamber_of(action),
-        "date": newest_date,
+        "date": date,
         "basis": action.get("text"),
+        # where the bill sits right now, which may be a different chamber
+        "current_chamber": newest[2][1] or _chamber_of(newest[3]),
+        "current_basis": newest[3].get("text"),
+        "current_date": newest_date,
     }
 
 

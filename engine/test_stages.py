@@ -79,6 +79,51 @@ case(
     "in_committee",
 )
 
+# The NDAA case, in full. A failed cloture is a vote on whether to PROCEED; the
+# Senate reconsidered and kept pushing. Staging this 'failed' was a real bug.
+case(
+    "a failed cloture does not kill a bill (S 4784)",
+    [
+        a("Placed on Senate Legislative Calendar under General Orders. Calendar No. 436.",
+          "2026-06-15", "Senate"),
+        a("Cloture motion on the motion to proceed to the measure not invoked in Senate.",
+          "2026-07-14", "Senate"),
+        a("Motion by Senator Thune to reconsider the vote by which cloture on the motion "
+          "to proceed was not invoked.", "2026-07-14", "Senate"),
+        a("Motion to proceed to consideration of measure made in Senate.", "2026-07-27",
+          "Senate"),
+    ],
+    "reported",
+)
+
+# ...but a failure OF THE MEASURE is terminal and must still register.
+case(
+    "a measure that fails of passage is failed",
+    [a("On passage Failed by the Yeas and Nays (2/3 required).", "2026-05-01",
+       "House floor actions")],
+    "failed",
+)
+
+# Shape-independence, and the bicameral rule together: the API hands derive()
+# camelCase, a DB row hands it snake_case, and in both the FURTHEST milestone wins
+# (the bill passed the House; the Senate-calendar entry is where it sits, not a
+# regression). If only one shape were understood, every date would read as ''.
+_DB_SHAPE = [
+    {"text": "Passed/agreed to in House: On motion to suspend the rules.",
+     "action_date": "2026-04-27", "source_name": "House floor actions"},
+    {"text": "Read the second time. Placed on Senate Legislative Calendar under General Orders.",
+     "action_date": "2026-07-14", "source_name": "Senate"},
+]
+case("DB-shaped rows (snake_case): furthest milestone wins", _DB_SHAPE, "passed_house")
+
+_API_SHAPE = [
+    {"text": "Passed/agreed to in House: On motion to suspend the rules.",
+     "actionDate": "2026-04-27", "sourceSystem": {"name": "House floor actions"}},
+    {"text": "Read the second time. Placed on Senate Legislative Calendar under General Orders.",
+     "actionDate": "2026-07-14", "sourceSystem": {"name": "Senate"}},
+]
+case("API-shaped rows (camelCase): same answer", _API_SHAPE, "passed_house")
+
 # Non-decisive chatter must not match anything.
 case("unknown when nothing is decisive",
      [a("Held at the desk.", "2026-06-01")], "in_committee")
@@ -100,7 +145,27 @@ def main() -> int:
     failures += 0 if ok else 1
     print(f"  [{'PASS' if ok else 'FAIL'}] ladder ranks strictly increasing: {ranks}")
 
-    print(f"\nSTAGE RULES: {len(CASES) + 1 - failures}/{len(CASES) + 1} — "
+    # bicameral: reached the House floor, now sitting in the Senate — the stage is
+    # the milestone, current_chamber is where it actually is
+    d = stages.derive(_DB_SHAPE)
+    ok = d["stage"] == "passed_house" and d.get("current_chamber") == "senate"
+    failures += 0 if ok else 1
+    print(f"  [{'PASS' if ok else 'FAIL'}] bicameral split: milestone={d['stage']!r} "
+          f"now_in={d.get('current_chamber')!r} (want 'passed_house'/'senate')")
+
+    # a terminal action must NOT be masked by an earlier success
+    d = stages.derive([
+        {"text": "Passed/agreed to in House", "action_date": "2026-04-27",
+         "source_name": "House floor actions"},
+        {"text": "On passage Failed by the Yeas and Nays.", "action_date": "2026-06-01",
+         "source_name": "Senate"},
+    ])
+    ok = d["stage"] == "failed"
+    failures += 0 if ok else 1
+    print(f"  [{'PASS' if ok else 'FAIL'}] terminal action beats earlier success: "
+          f"got {d['stage']!r} (want 'failed')")
+
+    print(f"\nSTAGE RULES: {len(CASES) + 3 - failures}/{len(CASES) + 3} — "
           + ("PASS" if failures == 0 else f"FAIL ({failures})"))
     return 1 if failures else 0
 

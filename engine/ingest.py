@@ -111,15 +111,19 @@ def ingest(con: sqlite3.Connection, congress_no: int, bill_type: str,
     con.execute(
         """
         INSERT INTO stages (congress, bill_type, number, stage, chamber,
-                            determined_by, basis, computed_at)
-        VALUES (?,?,?,?,?,?,?,?)
+                            determined_by, basis, current_chamber, current_basis,
+                            computed_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(congress, bill_type, number) DO UPDATE SET
           stage=excluded.stage, chamber=excluded.chamber,
           determined_by=excluded.determined_by, basis=excluded.basis,
+          current_chamber=excluded.current_chamber,
+          current_basis=excluded.current_basis,
           computed_at=excluded.computed_at
         """,
         (congress_no, bt, number, derived["stage"], derived["chamber"],
-         deciding_id, derived["basis"], ts),
+         deciding_id, derived["basis"], derived.get("current_chamber"),
+         derived.get("current_basis"), ts),
     )
     con.commit()
 

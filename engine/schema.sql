@@ -66,14 +66,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_actions_identity ON actions (
 
 -- The derived stage. Recomputed, never hand-edited.
 CREATE TABLE IF NOT EXISTS stages (
-  congress      INTEGER NOT NULL,
-  bill_type     TEXT    NOT NULL,
-  number        INTEGER NOT NULL,
-  stage         TEXT    NOT NULL,
-  chamber       TEXT,
-  determined_by INTEGER,                 -- actions.action_id that decided it
-  basis         TEXT,                    -- the action text, so the call is auditable
-  computed_at   TEXT    NOT NULL,
+  congress        INTEGER NOT NULL,
+  bill_type       TEXT    NOT NULL,
+  number          INTEGER NOT NULL,
+  stage           TEXT    NOT NULL,      -- the FURTHEST milestone reached
+  chamber         TEXT,                  -- chamber of that milestone
+  determined_by   INTEGER,               -- actions.action_id that decided it
+  basis           TEXT,                  -- the action text, so the call is auditable
+  -- Where the bill sits NOW, which is often a different chamber: HR 2347 passed
+  -- the House and now sits on the Senate calendar. One linear ladder cannot say
+  -- both, so we store both.
+  current_chamber TEXT,
+  current_basis   TEXT,
+  computed_at     TEXT    NOT NULL,
   PRIMARY KEY (congress, bill_type, number),
   FOREIGN KEY (congress, bill_type, number) REFERENCES bills
 );
