@@ -1,0 +1,15 @@
+[
+  {
+    "bill_id": "119s4621",
+    "score": 5,
+    "reason": "SILVER Act is a known market-access exploit masquerading as systemic risk mitigation. Forces open controlled precious metals markets (vault mandate) for positioned insiders under regulatory arbitrage cover.",
+    "vectors": [
+      "market-access exploit",
+      "regulatory capture",
+      "vault mandate mechanics",
+      "systemic risk language as smokescreen"
+    ],
+    "title": "SILVER Act",
+    "url": "https://www.congress.gov/bill/119th-congress/s-bill/4621"
+  }
+]
