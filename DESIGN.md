@@ -76,9 +76,16 @@ grids, monument statistics, centred stacks, emoji, and any colour used for mood.
 --rule       #D9D5CC    hairlines
 --track      #E7E3DA    empty bar track
 --signal     #C8442A    THE GAP. Nothing else. Ever.
+--ch-house   #DCE4EC    chamber of origin: House   (not the signal family)
+--ch-senate  #E8DFC6    chamber of origin: Senate  (not the signal family)
 ```
 
-Inverted ("ink") mode swaps paper/ink; `--signal` lifts to `#E4643F` for contrast on dark.
+Inverted ("ink") mode swaps paper/ink; `--signal` lifts to `#E4643F` for contrast on dark, and
+the chamber tints darken to `#1D2933` / `#2C2818`.
+
+> **Known gap:** the chamber tints are deliberately quiet (see the colour law), and on the ink
+> ground they only just separate. Tighten them when ink mode is actually reachable — it has no
+> toggle and no `prefers-color-scheme` today, so no reader can see it yet.
 
 ### Type
 
@@ -146,6 +153,14 @@ that is not a gap, which breaks the colour law.
 - **State is carried by form, not hue** — an open bill has a *solid* dot, a closed one a
   *hollow* dot. Nav current-page is an ink underline, not a coloured one.
 - The single exception: focus rings may use `--signal` (accessibility beats purity).
+- **One other colour role exists: `--ch-house` / `--ch-senate`, the chamber a bill starts in.** It
+  sits deliberately *outside* the signal family, so it can never be mistaken for the gap. It is
+  information, not ornament: the chamber a bill starts in decides which body votes first, and it is
+  the one thing a reader wants at a glance once a list mixes the two. Types are mapped by chamber,
+  so the rule covers all eight and not merely HR and S.
+  - **Never colour-alone.** The letterform (HR / S) is always present, so the distinction survives
+    monochrome and colour-blindness. An unmapped type takes the neutral track tint rather than
+    being silently handed a chamber it does not have.
 
 ---
 

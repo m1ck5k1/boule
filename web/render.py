@@ -187,6 +187,35 @@ def congress_url(congress: int, bill_type: str, number: int) -> str:
     return f"https://www.congress.gov/bill/{_ordinal(congress)}-congress/{slug}/{number}"
 
 
+# Chamber of origin. This is information, not decoration: the chamber a bill starts in
+# decides which body votes first, and it is the one thing a reader wants at a glance
+# once a list mixes the two. Types are mapped by chamber, so the rule covers all eight
+# rather than only HR and S.
+_HOUSE_TYPES = {"hr", "hjres", "hconres", "hres"}
+_SENATE_TYPES = {"s", "sjres", "sconres", "sres"}
+
+
+def chamber(bill_type: str) -> str:
+    """'house', 'senate' or 'other' — the chamber of origin."""
+    t = (bill_type or "").strip().lower()
+    if t in _HOUSE_TYPES:
+        return "house"
+    if t in _SENATE_TYPES:
+        return "senate"
+    return "other"
+
+
+def bill_id_html(bill_type: str, number) -> str:
+    """The identifier as a chamber-tinted chip.
+
+    The letterform (HR / S) carries the fact and is always present; the tint only
+    reinforces it. The distinction therefore never rests on colour alone, which is
+    what keeps it legible in monochrome and to a colour-blind reader.
+    """
+    label = f"{(bill_type or '').upper()} {number}"
+    return f'<span class="chamber {chamber(bill_type)}">{esc(label)}</span>'
+
+
 def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: int,
               base_path: str = "") -> str:
     """The second screen of the floor: one bill, its real record, and the vote.
@@ -269,7 +298,7 @@ def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: in
                 " — this vote is on that text." if version else "No text version recorded yet.")
 
     body = masthead([
-        f'{esc(label)} — <b>{esc(row["title"] or "(no title)")}</b>',
+        f'{bill_id_html(bill_type, number)} — <b>{esc(row["title"] or "(no title)")}</b>',
         f"Introduced {esc(introduced)}",
     ]) + f"""
 <main id="main" class="single">
@@ -398,6 +427,7 @@ def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict, base_path:
     title = row["title"] or "(no title)"
     stage = stage_text(row["stage"], row["chamber"], row["current_chamber"])
     label = f"{bill_type} {number}"
+    label_html = bill_id_html(bill_type, number)
     detail_href = (f"{base_path}/bill/{esc(row['congress'])}/"
                    f"{esc((row['bill_type'] or '').lower())}/{esc(number)}")
 
@@ -435,7 +465,7 @@ def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict, base_path:
 
     return f"""    <li><article class="bill" aria-labelledby="b-{esc(bill_type)}-{esc(number)}">
       <div>
-        <div class="bill-id">{esc(label)}</div>
+        <div class="bill-id">{label_html}</div>
         <h2 class="bill-title" id="b-{esc(bill_type)}-{esc(number)}"><a class="bill-link" href="{detail_href}">{esc(title)}</a></h2>
         <p class="stage"><span class="dot" aria-hidden="true"></span>{esc(stage)}</p>
       </div>
