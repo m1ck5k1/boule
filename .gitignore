@@ -15,3 +15,5 @@ engine/boule.db
 engine/boule.db-wal
 engine/boule.db-shm
 engine/__pycache__/
+dist/
+dist2/

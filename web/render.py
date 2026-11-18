@@ -37,6 +37,103 @@ CHAMBER = {"house": "the House", "senate": "the Senate", "both": "both chambers"
 
 NAV = [("Today", "/"), ("Bills", "/bills"), ("The Gap", "/gap"), ("Me", "/me")]
 
+# One source of truth for what exists. The server, the static build and the gate
+# all read this, so they cannot disagree about which pages are real — the LINKS
+# failure came from exactly that disagreement.
+ROUTES: list[tuple[str, str, str]] = [
+    # (url path, static filename, nav label marked current)
+    ("/", "index.html", "Today"),
+    ("/bills", "bills.html", "Bills"),
+    ("/gap", "gap.html", "The Gap"),
+    ("/me", "me.html", "Me"),
+    ("/privacy", "privacy.html", ""),
+]
+
+
+def page(title: str, body: str, current_nav: str = "Today",
+         base_path: str = "") -> str:
+    """`base_path` exists so the same markup serves both ways.
+
+    Served from a root domain, base_path is "". Built as static files for a
+    subpath host (m1ck5k1.github.io/boule/ or an R2 bucket), every absolute URL
+    has to carry the prefix — otherwise the CSS and the nav 404 the moment the
+    site is not at the root. Getting this wrong is invisible locally and total
+    once deployed.
+    """
+    def href(path: str) -> str:
+        return f"{base_path}{path}"
+
+    nav = "\n".join(
+        f'<a href="{href(nav_href)}"'
+        + (' aria-current="page"' if label == current_nav else "")
+        + f">{esc(label)}</a>"
+        for label, nav_href in NAV
+    )
+    return f"""<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{esc(title)}</title>
+<link rel="stylesheet" href="{href('/static/boule.css')}">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+{body}
+<nav class="nav" aria-label="Sections">
+{nav}
+</nav>
+<footer class="note">
+  <b>Boule is a second tally that runs beside the real one, so the gap becomes
+  visible.</b> This is the read-only build: bills and their stages are real and
+  come from Congress.gov. Voting is not open yet, so no public tally and no gap
+  are shown — an empty tally is a fact, a zero would be a claim.
+  <span class="legal-links"><a href="{href('/privacy')}">Privacy</a></span>
+</footer>
+</body>
+</html>
+"""
+
+
+def privacy_page(base_path: str = "") -> str:
+    """Serve the policy from legal/privacy.html — one source, no markdown step."""
+    body_html = (LEGAL / "privacy.html").read_text(encoding="utf-8")
+    body = masthead(["<b>Privacy</b> — what Boule collects, and what it never does"])
+    body += f"""
+<main id="main" class="legal">
+{body_html}
+</main>
+"""
+    return page("Boule — privacy policy", body, "", base_path=base_path)
+
+
+def stub_page(path: str, base_path: str = "") -> str:
+    """A surface named in the nav but not built yet.
+
+    It exists because the nav links to it, and a link to a 404 is the same class
+    of lie as a button that does nothing. Saying "not built yet" plainly is the
+    honest option; linking nowhere is not.
+    """
+    label = path.strip("/").title()
+    body = masthead([f"<b>{label}</b> — not built yet"])
+    body += '<main id="main"><p class="empty">This surface is not built yet.</p></main>'
+    return page(f"Boule — {path.strip('/')}", body, label, base_path=base_path)
+
+
+def render_route(path: str, con, today: str, base_path: str = "") -> str:
+    """One renderer for the server AND the static build.
+
+    If these diverged, the twin gate would be the only thing standing between a
+    working preview and a broken deploy.
+    """
+    if path in ("/", "/today"):
+        return today_page(con, today, base_path)
+    if path == "/privacy":
+        return privacy_page(base_path)
+    if path in ("/bills", "/gap", "/me"):
+        return stub_page(path, base_path)
+    raise KeyError(f"no route for {path}")
+
 
 def stage_text(stage: str | None, chamber: str | None, current: str | None) -> str:
     """The milestone, plus where the bill actually sits when that differs.
@@ -56,51 +153,6 @@ def stage_text(stage: str | None, chamber: str | None, current: str | None) -> s
 
 def esc(value) -> str:
     return html.escape(str(value if value is not None else ""))
-
-
-def page(title: str, body: str, current_nav: str = "Today") -> str:
-    nav = "\n".join(
-        f'<a href="{href}"'
-        + (' aria-current="page"' if label == current_nav else "")
-        + f">{esc(label)}</a>"
-        for label, href in NAV
-    )
-    return f"""<!DOCTYPE html>
-<html lang="en-GB">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>{esc(title)}</title>
-<link rel="stylesheet" href="/static/boule.css">
-</head>
-<body>
-<a class="skip" href="#main">Skip to content</a>
-{body}
-<nav class="nav" aria-label="Sections">
-{nav}
-</nav>
-<footer class="note">
-  <b>Boule is a second tally that runs beside the real one, so the gap becomes
-  visible.</b> This is the read-only build: bills and their stages are real and
-  come from Congress.gov. Voting is not open yet, so no public tally and no gap
-  are shown — an empty tally is a fact, a zero would be a claim.
-  <span class="legal-links"><a href="/privacy">Privacy</a></span>
-</footer>
-</body>
-</html>
-"""
-
-
-def privacy_page() -> str:
-    """Serve the policy from legal/privacy.html — one source, no markdown step."""
-    body_html = (LEGAL / "privacy.html").read_text(encoding="utf-8")
-    body = masthead(["<b>Privacy</b> — what Boule collects, and what it never does"])
-    body += f"""
-<main id="main" class="legal">
-{body_html}
-</main>
-"""
-    return page("Boule — privacy policy", body, "")
 
 
 def masthead(dateline_bits: list[str]) -> str:
@@ -171,7 +223,7 @@ def human_date(iso: str) -> str:
     return f"{d.strftime('%a')} {d.day} {d.strftime('%b %Y')}"
 
 
-def today_page(con: sqlite3.Connection, today: str) -> str:
+def today_page(con: sqlite3.Connection, today: str, base_path: str = "") -> str:
     rows = con.execute(
         """
         SELECT b.congress, b.bill_type, b.number, b.title, b.latest_action,
@@ -218,4 +270,4 @@ def today_page(con: sqlite3.Connection, today: str) -> str:
   </section>
 </main>
 """
-    return page("Boule — today's bills", body, "Today")
+    return page("Boule — today's bills", body, "Today", base_path=base_path)

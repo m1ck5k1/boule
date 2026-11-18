@@ -166,6 +166,46 @@ certificate exists for it. Google verifies the *top private domain*, so a homepa
 **Order rationale:** each stage is falsifiable on its own and none depends on a later one. S1–S2
 give an honest read-only site before a single vote exists — the site is useful with zero voters.
 
+### Hosting architecture: the split, and where the money actually is
+
+**Decision (18 Nov): split the read path from the write path.** Reading is static; only voting
+needs a live origin.
+
+| Tier | Workload | Host | Free ceiling | First dollar |
+|---|---|---|---|---|
+| **Read** | pages | static — GitHub Pages, R2, any web server | **3.9M views/month** (Pages' 100 GB soft cap) | $0 |
+| **Write** | one INSERT per vote | tiny API — Cloudflare Worker + D1 | **3.45M votes** (500 MB D1 cap; 100k writes/day) | **$5/month** |
+| **Corpus** | publish the dataset | R2 | 10 GB | $2/month at 1B votes |
+| Identity | OAuth | Google / Microsoft | — | $0 |
+| TLS + DNS | — | Cloudflare | — | $0 |
+
+**Measured, not guessed:** a page view is **25,557 B cold / 16,079 B cached**; a vote is **~145 B**
+including its index; the front-page query runs in **0.04 ms**. Egress is the only line that scales
+with success, and a static read path has none. The vote ledger — the thing that *sounds* like it
+needs a cluster — is 145 bytes a row, so a billion votes is 145 GB, and R2 charges **zero egress**
+(verified), which retires the original reason BitTorrent was on the list.
+
+**The catch, recorded now rather than discovered later:** a static page cannot show a live tally.
+The gap changes, so it must either be rebuilt on a schedule — stale by that interval — or fetched
+client-side, which means a JS dependency and moving the `sr-only` tally equivalents into a proper
+live region. That is real S3 work and a deliberate staleness decision, not a footnote.
+
+**Reversibility is the whole point.** The static half can move to R2 or any web server with a
+one-line change, so choosing GitHub Pages today does not commit the project to GitHub. That matters
+here: a platform recording people's political opinions on someone else's infrastructure is a
+dependency worth keeping cheap to leave.
+
+**Enabling capability, built and gated (5/5):** `web/build.py` emits the whole read path as static
+files, `render.ROUTES` is the single source of truth for what exists, and `web/gate_static.py`
+proves it. The load-bearing check is **TWIN** — the built pages must be *byte-identical* to what the
+server serves for the same database, so the static site and the live site cannot drift apart.
+
+The gate earned that on its first run: it caught that the nav linked to `/bills`, `/gap` and `/me`
+while the build emitted neither, so **three of four nav links would have 404'd on Pages**. Fixed by
+rendering every route in `ROUTES` through the same function the server uses, including honest
+`stub_page` output for surfaces that are named but not built — a link to a 404 is the same class of
+lie as a button that does nothing.
+
 ### S1 blocker — resolved, with a caveat
 
 `CONGRESS_API_KEY` is **not** local (the repo `.env` holds only `AIRTABLE_PAT`), and GitHub

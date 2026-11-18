@@ -87,26 +87,15 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith("/static/"):
             return self._static(path)
 
-        if path in ("/", "/today"):
+        if path in ("/", "/today", "/privacy", "/bills", "/gap", "/me"):
             con = self._db()
             try:
-                body = render.today_page(con, date.today().isoformat())
+                body = render.render_route(path, con, date.today().isoformat())
+            except KeyError:
+                con.close()
+                return self._send(404, "no such route", "text/plain; charset=utf-8")
             finally:
                 con.close()
-            return self._send(200, body)
-
-        if path == "/privacy":
-            return self._send(200, render.privacy_page())
-
-        # /bills, /gap, /me are named in the nav but not built yet. Say so plainly
-        # rather than pretending they work.
-        if path in ("/bills", "/gap", "/me"):
-            body = render.page(
-                f"Boule — {path.strip('/')}",
-                render.masthead([f"<b>{path.strip('/').title()}</b> — not built yet"])
-                + '<main id="main"><p class="empty">This surface is not built yet.</p></main>',
-                path.strip("/").title(),
-            )
             return self._send(200, body)
 
         body = render.page(
