@@ -87,24 +87,47 @@ def match(text: str) -> tuple[str, str | None] | None:
     return None
 
 
-def derive(actions: list[dict]) -> dict:
-    """The newest decisive action decides the stage.
+def _pref(stage: str) -> int:
+    """Preference among actions that share a date. Positive stages outrank
+    terminal ones, which outrank unknown."""
+    if stage in TERMINAL:
+        return -1
+    if stage in STAGES:
+        return STAGES.index(stage)
+    return -2
 
-    Returns {stage, chamber, date, basis}; stage is 'unknown' when no action in
-    the history matches any rule — which is a real outcome, not an error.
+
+def derive(actions: list[dict]) -> dict:
+    """The newest DATE holding a decisive action decides the stage.
+
+    Why by date and not by list position: a bill is routinely introduced and
+    referred to committee on the SAME day, so two actions share a date. Depending
+    on the order congress.gov happens to return them in would report a referred
+    bill as merely 'introduced'. So among actions on the newest decisive date we
+    take the MOST ADVANCED stage — semantics, not array order.
+
+    Returns {stage, chamber, date, basis}; stage is 'unknown' when no action
+    matches any rule, which is a real outcome rather than an error.
     """
-    ordered = sorted(actions, key=lambda a: a.get("actionDate") or "")
-    for action in reversed(ordered):
+    matches = []
+    for action in actions:
         hit = match(action.get("text", ""))
         if hit:
-            stage, chamber = hit
-            return {
-                "stage": stage,
-                "chamber": chamber or _chamber_of(action),
-                "date": action.get("actionDate"),
-                "basis": action.get("text"),
-            }
-    return {"stage": "unknown", "chamber": None, "date": None, "basis": None}
+            matches.append((action.get("actionDate") or "", _pref(hit[0]), hit, action))
+
+    if not matches:
+        return {"stage": "unknown", "chamber": None, "date": None, "basis": None}
+
+    newest_date = max(m[0] for m in matches)
+    _, _, hit, action = max((m for m in matches if m[0] == newest_date),
+                            key=lambda m: m[1])
+    stage, chamber = hit
+    return {
+        "stage": stage,
+        "chamber": chamber or _chamber_of(action),
+        "date": newest_date,
+        "basis": action.get("text"),
+    }
 
 
 def rank(stage: str) -> int:

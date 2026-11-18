@@ -48,6 +48,18 @@ def ingest(con: sqlite3.Connection, congress_no: int, bill_type: str,
     ts = now_iso()
     latest = bill.get("latestAction") or {}
 
+    # Make silent loss visible: if the API returns two actions that share an
+    # identity, our uniqueness key will collapse them and COVERAGE will fail.
+    # Better to say so here than to discover it as a bare count mismatch.
+    def identity(a: dict) -> tuple:
+        return (a.get("actionDate"), (a.get("sourceSystem") or {}).get("code"),
+                a.get("actionCode"), a.get("text"))
+
+    distinct = len({identity(a) for a in actions})
+    if distinct < len(actions):
+        print(f"  note: {len(actions) - distinct} action(s) share an identity in this "
+              f"fetch (collapse them or widen ux_actions_identity)")
+
     con.execute(
         """
         INSERT INTO bills (congress, bill_type, number, title, origin_chamber,

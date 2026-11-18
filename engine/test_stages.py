@@ -56,6 +56,29 @@ case(
     "passed_senate",
 )
 
+# Introduced and referred on the SAME day — the real 119 HR 10983 case that made
+# the gate fail. Order in the array must not matter; the advanced stage wins.
+case(
+    "same date: referral outranks introduction",
+    [
+        a("Referred to the House Committee on Energy and Commerce.", "2026-11-10",
+          "House floor actions", code="H11100"),
+        a("Introduced in House", "2026-11-10", "Library of Congress", code="Intro-H"),
+    ],
+    "in_committee",
+)
+
+# ...and the reverse array order must give the same answer.
+case(
+    "same date: order-independent",
+    [
+        a("Introduced in House", "2026-11-10", "Library of Congress", code="Intro-H"),
+        a("Referred to the House Committee on Energy and Commerce.", "2026-11-10",
+          "House floor actions", code="H11100"),
+    ],
+    "in_committee",
+)
+
 # Non-decisive chatter must not match anything.
 case("unknown when nothing is decisive",
      [a("Held at the desk.", "2026-06-01")], "in_committee")

@@ -51,8 +51,17 @@ CREATE TABLE IF NOT EXISTS actions (
   text          TEXT    NOT NULL,
   has_vote      INTEGER NOT NULL DEFAULT 0,  -- 1 when this action carries a recordedVotes link
   record_url    TEXT,
-  UNIQUE (congress, bill_type, number, action_date, text),
   FOREIGN KEY (congress, bill_type, number) REFERENCES bills
+);
+
+-- Action identity. Deliberately NOT a table constraint: SQLite treats NULLs as
+-- distinct in UNIQUE, so a null action_code would let the same action insert
+-- twice and break idempotency. COALESCE collapses the nulls, and source_system is
+-- part of the key because the same event is legitimately reported by both the
+-- chamber and the Library of Congress.
+CREATE UNIQUE INDEX IF NOT EXISTS ux_actions_identity ON actions (
+  congress, bill_type, number, action_date,
+  COALESCE(source_system, -1), COALESCE(action_code, ''), text
 );
 
 -- The derived stage. Recomputed, never hand-edited.
