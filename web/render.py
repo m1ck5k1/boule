@@ -262,7 +262,7 @@ def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: in
         f'{esc(label)} — <b>{esc(row["title"] or "(no title)")}</b>',
         f"Introduced {esc(introduced)}",
     ]) + f"""
-<main id="main">
+<main id="main" class="single">
   <p class="stage"><span class="dot" aria-hidden="true"></span>{esc(stage)}</p>
 
   <p class="sr-only">{esc(sr)}</p>

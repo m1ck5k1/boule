@@ -274,3 +274,13 @@ h1.wordmark{
 .bill-link{ color:inherit; text-decoration:none; border-bottom:1px solid transparent; }
 .bill-link:hover{ border-bottom-color:var(--ink); }
 .bill-link:focus-visible{ outline:2px solid var(--ink); outline-offset:3px; }
+
+/* ---- a single-item page (one bill): the site gutter, since body has none ----
+   Every block on the site carries its own padding; the bill page's <main> had
+   none, so its content ran to the page edges and the tally grid — built for the
+   ~600px ledger card — stretched full width and clipped its count column. */
+.single{ max-width:78ch; padding:6px var(--gap) 40px; }
+.single > .stage{ margin:0 0 16px; }
+.single .tallies{ max-width:560px; }
+.single .tallies .trow{ grid-template-columns:78px 1fr 62px 120px; }
+.single .act{ margin:20px 0 8px; }
