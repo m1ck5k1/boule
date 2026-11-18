@@ -87,6 +87,34 @@ say so rather than invent one. Same rule as the gap: if the date does not exist,
 
 ---
 
+## Wiring it up — the stage ladder
+
+One stage at a time. **Each stage has a gate fixed before it is built**, and a gate is a
+pass/fail test, not a demo. No stage starts until the previous gate passes.
+
+| Stage | Build | Gate — the test that must pass | State |
+|---|---|---|---|
+| **S0** | preview served by a supervised service | kill the process → systemd replaces it; survives reboot; HTTP 200 over tailnet | ✅ **done** |
+| **S1** | Congress.gov client → SQLite (`bills`, `bill_versions`, `actions`) | for one real bill the DB holds its actions in order and the derived **stage matches congress.gov** | ⬜ next |
+| **S2** | front page renders from the DB, not from HTML | edit a DB row → the page changes **without touching HTML** | ⬜ |
+| **S3** | ballot box: append-only `votes`, `POST /api/vote`, server-side stamp, keyed `(bill, version)` | changing a vote **adds a row and never mutates the old one**; no `UPDATE`/`DELETE` can run (DB trigger) | ⬜ |
+| **S4** | gap computed from public ⨯ official | the gap equals `public% − official%` on a known bill; a bill with **no** official vote renders `—`, never `0` | ⬜ |
+| **S5** | identity + one-per-person | two accounts cannot double-vote the same `(bill, version)`; provenance tier visible | ⬜ |
+| **S6** | installable PWA (tailscale cert, manifest, service worker, icons) | "Add to Home Screen" **installs** — opens without browser chrome | ⬜ |
+| **S7** | public deploy (VPS + domain) | first non-tailnet visitor can vote | ⬜ |
+
+**Order rationale:** each stage is falsifiable on its own and none depends on a later one. S1–S2
+give an honest read-only site before a single vote exists — the site is useful with zero voters.
+
+### S1 blocker — resolved, with a caveat
+
+`CONGRESS_API_KEY` is **not** local (the repo `.env` holds only `AIRTABLE_PAT`), and GitHub
+Actions secrets cannot be read back. However **`DEMO_KEY` works** (verified: HTTP 200, real
+payload) at **`x-ratelimit-limit: 10`** — enough to *prove* the S1 gate against one bill, not
+enough to run the poller. The real key is still needed for the pipeline proper.
+
+---
+
 ## Phases
 
 ### Phase 0 — the mock ✅
