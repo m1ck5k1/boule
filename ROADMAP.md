@@ -97,34 +97,39 @@ pass/fail test, not a demo. No stage starts until the previous gate passes.
 | **S0** | preview served by a supervised service | kill the process → systemd replaces it; survives reboot; HTTP 200 over tailnet | ✅ **done** |
 | **S1** | Congress.gov client → SQLite (`bills`, `bill_versions`, `actions`) | for one real bill the DB holds its actions in order and the derived **stage matches congress.gov** | ✅ **done — 6/6 in CI** |
 | **S2** | front page renders from the DB, not from HTML | edit a DB row → the page changes **without touching HTML** | ✅ **done — gate passed** |
-| **S3** | ballot box: append-only `votes`, `POST /api/vote`, server-side stamp, keyed `(bill, version)` | changing a vote **adds a row and never mutates the old one**; no `UPDATE`/`DELETE` can run (DB trigger) | ⬜ |
+| **S3** | ballot box: append-only `votes`, `POST /api/vote`, server-side stamp, keyed `(bill, version)`, two-step confirm | changing a vote **adds a row and never mutates the old one**; no `UPDATE`/`DELETE` can run (DB trigger) | ✅ **done** — `engine/gate_s3.py` |
+| **S3.5** | the **Bill page** — a real `/bill/{congress}/{type}/{number}` route (the first dynamic route) | server and static are byte-identical for a bill page; the stage matches the DB; zero JS | ✅ **done** — TWIN gate 5/5 |
 | **S4** | gap computed from public ⨯ official | the gap equals `public% − official%` on a known bill; a bill with **no** official vote renders `—`, never `0` | ⬜ |
-| **S5** | identity + one-per-person | two accounts cannot double-vote the same `(bill, version)`; provenance tier visible | ⬜ **needs HTTPS first** |
-| **S6** | installable PWA (manifest, service worker, icons) | "Add to Home Screen" **installs** — opens without browser chrome | ⬜ |
-| **S7** | public deploy (VPS + domain) | first non-tailnet visitor can vote | ⬜ |
+| **S5** | the ballot box becomes **device-scoped**: a key is issued at install and refused a second reading on the same `(bill, version)` | the same device key **cannot** record two readings on one `(bill, version)`; `provenance` reads `device` vs `anonymous` | ⬜ **promoted — see ordering below** |
+| **S6** | **installable PWA** (manifest, service worker, icons) | "Add to Home Screen" installs, and the app holds a key the server honours | ⬜ **load-bearing — the install *is* the identity mechanism** |
+| **S7** | **the published ledger** — `/data`, the audit pack, the aggregates (`DATA.md`) | `engine/gate_publish.py` passes, and the published tally recomputes to the same number the page shows | ⬜ |
+| **S8** | public deploy (VPS + domain) *(was S7)* | first non-tailnet visitor can read and vote | ⬜ |
 
 ### Two ordering corrections, both forced by verified constraints
 
-**1. HTTPS must move ahead of S5.** Google OAuth redirect URIs *must* use HTTPS, and hosts
-**cannot be raw IP addresses** — localhost is the only exemption. So neither
-`http://mbp9.tail24a97e.ts.net:8123` nor `100.109.45.107` can ever be a redirect URI, and S5
-cannot be tested anywhere except localhost until `tailscale cert` (or a real domain) provides
-TLS. The HTTPS step therefore leaves S6 and becomes a prerequisite of S5.
+**1. HTTPS must move ahead of S5 AND S6 — for a different reason than we first wrote.** Not
+OAuth (there is no identity provider any more) but the **service worker**: a service worker runs
+only in a **secure context**, so an installable app cannot exist over plain HTTP. And the install
+is what makes a device key durable — which is what turns "one reading per device" into a real
+claim rather than a hopeful one. TLS is therefore the prerequisite of the *identity mechanism
+itself*. A **Cloudflare Tunnel** on `boule.incidium.net` gives HTTPS on a domain we own, with no
+open ports; that is the shortest path, and it also fronts S8.
 
-**2. S3 must record provenance from its first row.** Even if the only tier available at S3 is
-`anonymous`, the column has to exist from the start. Otherwise S5 arrives and there is a body of
-already-cast votes that cannot be attributed — and they would have to be discarded or
-retro-labelled, right when the tally is starting to matter.
+**2. S3 must record provenance from its first row.** The column has to exist from the start, or
+S5 arrives with a body of already-cast readings that cannot be attributed. **Settled in
+practice:** `provenance` was created with the table, every existing row reads `anonymous`, and
+that is exactly what those rows are.
 
-**Consequence for the exit criteria:** the phase exit asks for *"a real person can open it, sign
-in, vote on a real bill, and see both tallies"* — so sign-in is part of the minimum, not a nicety.
+**Consequence for the exit criteria:** the phase exit used to read *"open it, sign in, vote on a
+real bill, and see both tallies"*. **Sign-in is struck out** — there is no sign-in, by design. The
+exit is now: *install it, record one reading per device against a real bill, and see both tallies.*
 
-### Identity prerequisites — corrected, and mostly not blocking
+### Identity prerequisites — SUPERSEDED
 
-**Boule is in the cheap lane.** Google's own consent-screen documentation: the requirement to be on
-a test-user allowlist, the warning screen, and the 7-day token expiry **do not apply** to apps that
-request only `openid` + `email` + `profile`. *"If your app uses Sign in with Google to authenticate
-users then this exception also applies."* Boule needs nothing beyond those three scopes, so:
+This section planned a Google OAuth consent screen, test-user allowlists and scope lists.
+**None of it applies.** Boule has no identity provider, no consent screen, no OAuth domain
+verification and no scopes — the device key removed the entire problem. Kept only so
+future-selves can see the road not taken.
 
 | | Needed for sign-in? | Needed for a logo on the consent screen? |
 |---|---|---|

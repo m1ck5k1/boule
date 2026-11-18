@@ -12,17 +12,26 @@ each request in its own thread. At preview traffic the cost is irrelevant.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import sqlite3
 import sys
 import urllib.parse
-from datetime import date
+from datetime import date, datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parent / "engine"))
 
 import render  # noqa: E402
+import retention  # noqa: E402
+
+
+def _hash_ip(addr: str | None) -> str:
+    """The client address, hashed. Never the raw value, never published."""
+    return hashlib.sha256((addr or "").encode()).hexdigest()[:32]
+
 
 STATIC = (HERE / "static").resolve()
 CONTENT_TYPES = {
@@ -75,6 +84,14 @@ class Handler(BaseHTTPRequestHandler):
         con.row_factory = sqlite3.Row
         return con
 
+    def _db_rw(self) -> sqlite3.Connection:
+        # S3 — the ballot box needs a WRITABLE handle. The read handle above stays
+        # read-only on purpose: the front door must never rewrite the legislative
+        # record. Votes are a separate, append-only surface (DB triggers enforce it).
+        con = sqlite3.connect(f"file:{self.db_path}?mode=rw", uri=True)
+        con.row_factory = sqlite3.Row
+        return con
+
     def do_HEAD(self) -> None:                            # noqa: N802
         self.do_GET(head_only=True)
 
@@ -87,24 +104,93 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith("/static/"):
             return self._static(path)
 
-        if path in ("/", "/today", "/privacy", "/bills", "/gap", "/me"):
+        # Any route render knows about — including the per-bill detail pages, which
+        # are dynamic. An unknown path falls through to render's KeyError -> 404.
+        con = self._db()
+        try:
+            body = render.render_route(path, con, date.today().isoformat())
+        except KeyError:
+            con.close()
+            return self._send(404, "no such route", "text/plain; charset=utf-8")
+        finally:
+            con.close()
+        return self._send(200, body)
+
+    def do_POST(self) -> None:                            # noqa: N802
+        """S3 — the only write in the whole system: one append-only vote row."""
+        path = urllib.parse.urlparse(self.path).path
+        if path != "/api/vote":
+            return self._send(404, "not found", "text/plain; charset=utf-8")
+
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0 or length > 2048:
+            return self._send(400, "bad request", "text/plain; charset=utf-8")
+        form = urllib.parse.parse_qs(self.rfile.read(length).decode("utf-8", "replace"))
+
+        def one(key: str) -> str:
+            return (form.get(key) or [""])[0].strip()
+
+        choice = one("choice").lower()
+        bill_type = one("bill_type").lower()
+        version_code = one("version_code")
+        try:
+            congress = int(one("congress"))
+            number = int(one("number"))
+        except ValueError:
+            return self._send(400, "bad bill", "text/plain; charset=utf-8")
+        if choice not in ("yea", "nay") or not bill_type or not version_code:
+            return self._send(400, "bad vote", "text/plain; charset=utf-8")
+
+        # 'click once, click to confirm' — nothing is written until the confirm
+        # page is submitted, so a stray click cannot record a ballot.
+        if one("confirm") != "1":
             con = self._db()
             try:
-                body = render.render_route(path, con, date.today().isoformat())
-            except KeyError:
-                con.close()
-                return self._send(404, "no such route", "text/plain; charset=utf-8")
+                row = con.execute(
+                    "SELECT title FROM bills WHERE congress = ? AND bill_type = ? AND number = ?",
+                    (congress, bill_type, number),
+                ).fetchone()
             finally:
                 con.close()
-            return self._send(200, body)
+            title = (row["title"] if row else "") or "(no title)"
+            label = f"{bill_type.upper()} {number}"
+            hidden = "".join(
+                f'<input type="hidden" name="{k}" value="{render.esc(v)}">'
+                for k, v in (("congress", congress), ("bill_type", bill_type),
+                             ("number", number), ("version_code", version_code),
+                             ("choice", choice), ("confirm", "1"),
+                             ("next", one("next") or "/"))
+            )
+            return self._send(200, render.confirm_vote(label, title, choice, hidden))
 
-        body = render.page(
-            "Boule — not found",
-            render.masthead(["<b>404</b> — not found"])
-            + '<main id="main"><p class="empty">No such page.</p></main>',
-            "",
-        )
-        return self._send(404, body)
+        # The stamp is the server's, never the client's word. Provenance is 'anonymous'
+        # at S3 (S5 adds the tier).
+        cast_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        ip_hash = _hash_ip(self.client_address[0])
+
+        con = self._db_rw()
+        try:
+            # The reading goes into the append-only table, which holds nothing personal
+            # and therefore nothing that can expire. The single retained value -- the
+            # hashed address -- goes to `vote_nets`, which is mutable and purged on its
+            # own clock. (DATA.md: expiry is the licence to publish, not hygiene.)
+            cur = con.execute(
+                "INSERT INTO votes "
+                "(congress, bill_type, number, version_code, choice, provenance, cast_at) "
+                "VALUES (?, ?, ?, ?, ?, 'anonymous', ?)",
+                (congress, bill_type, number, version_code, choice, cast_at),
+            )
+            con.execute(
+                "INSERT INTO vote_nets (vote_id, ip_hash, retire_after) VALUES (?, ?, ?)",
+                (cur.lastrowid, ip_hash, retention.retire_after(retention.ADDRESS_DAYS)),
+            )
+            con.commit()
+        except sqlite3.Error as exc:
+            return self._send(500, f"vote not recorded: {exc}", "text/plain; charset=utf-8")
+        finally:
+            con.close()
+
+        return self._redirect(one("next") or "/")
 
 
 def main() -> int:

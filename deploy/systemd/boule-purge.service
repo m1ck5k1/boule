@@ -1,0 +1,7 @@
+[Unit]
+Description=Boule — retire expired retained values (DATA.md: expiry is the licence to publish)
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/boule
+ExecStart=/usr/bin/python3 %h/boule/engine/purge.py --db %h/boule/engine/boule.db

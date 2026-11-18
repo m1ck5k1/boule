@@ -4,11 +4,14 @@
    loudest thing on the page.
 
    Colour law: --signal is reserved for the gap and nothing else. If red is
-   decorating something that is not a gap, the design is wrong. */
+   decorating something that is not a gap, the design is wrong.
+   One other colour role exists: --ch-house / --ch-senate, the chamber a bill starts
+   in. It sits deliberately outside the signal family. */
 
 :root{
   --paper:#FAF9F6; --ink:#14130F; --ink-2:#4A463D; --rule:#D9D5CC; --rule-hard:#14130F;
   --signal:#C8442A; --track:#E7E3DA;
+  --ch-house:#DCE4EC; --ch-senate:#E8DFC6;
   --sans:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
   --mono:ui-monospace,"SF Mono",Menlo,monospace;
   --gap:28px; --ds:.14em;
@@ -16,6 +19,7 @@
 html[data-mode="ink"]{
   --paper:#14130F; --ink:#F2F0EA; --ink-2:#A9A296; --rule:#3A3730; --rule-hard:#F2F0EA;
   --signal:#E4643F; --track:#26241E;
+  --ch-house:#1D2933; --ch-senate:#2C2818;
 }
 
 *{ box-sizing:border-box; }
@@ -80,6 +84,11 @@ h1.wordmark{
   padding:20px var(--gap); border-bottom:1px solid var(--rule);
 }
 .bill-id{ font-family:var(--mono); font-size:12px; letter-spacing:.06em; }
+/* Chamber of origin. `other` keeps the neutral track tint, so an unmapped type is
+   visibly unmarked rather than silently given a chamber it does not have. */
+.chamber{ display:inline-block; padding:1px 6px 2px; border-radius:2px; background:var(--track); }
+.chamber.house{ background:var(--ch-house); }
+.chamber.senate{ background:var(--ch-senate); }
 .bill-title{ font-size:16px; font-weight:400; line-height:1.25; margin:3px 0 7px; }
 .bill-title a{ text-decoration:none; }
 .bill-title a:hover{ text-decoration:underline; }
@@ -233,3 +242,76 @@ h1.wordmark{
   .trow{ grid-template-columns:64px 1fr 54px; gap:10px; }
   .tcount{ grid-column:3; }
 }
+
+/* ---- S3: the ballot box ---- */
+.votebox{ display:inline-flex; gap:8px; align-items:center; margin:0; }
+.votebox .vote{ padding:11px 16px; min-height:44px; }
+.confirm{ display:block; max-width:56ch; margin:44px auto; padding:0 var(--gap); }
+.confirm-h{
+  font-size:20px; margin:0 0 16px; font-weight:700;
+  letter-spacing:var(--ds); text-transform:uppercase;
+}
+.cbill{ margin:0 0 8px; font-size:15px; }
+.cbill .cs{ color:var(--ink-2); }
+.cchoice{ margin:0 0 22px; color:var(--ink-2); font-size:13.5px; line-height:1.55; }
+.votebox.confirm{ display:flex; gap:16px; align-items:center; }
+.cancel{
+  font-size:11.5px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2);
+  text-decoration:none; border-bottom:1px solid var(--rule-hard); padding-bottom:2px;
+}
+.cancel:hover{ color:var(--ink); }
+
+/* ---- bill detail: the reading stack + the action timeline ---- */
+.sect-h{
+  font-size:11px; letter-spacing:var(--ds); text-transform:uppercase;
+  margin:26px 0 10px; padding-top:16px; border-top:1px solid var(--rule);
+}
+.layer{ border:1px solid var(--rule); padding:12px 14px; margin:0 0 10px; }
+.layer .lh{ display:flex; gap:10px; align-items:baseline; margin:0 0 6px; }
+.layer .ltag{ font-weight:700; font-size:11px; letter-spacing:var(--ds); text-transform:uppercase; }
+.layer .lsrc{ font-size:10px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2); }
+.layer .lbody{ margin:0; font-size:13.5px; line-height:1.55; }
+.notwired{ color:var(--ink-2); font-style:italic; }
+.hint{ font-size:11px; color:var(--ink-2); letter-spacing:var(--ds); text-transform:uppercase; }
+.atl{ list-style:none; margin:0; padding:0; }
+.arow{
+  display:grid; grid-template-columns:100px 92px 1fr; gap:12px;
+  padding:7px 0; border-top:1px solid var(--rule); font-size:12.5px;
+}
+.arow time{ font-family:var(--mono); color:var(--ink-2); }
+.atype{ font-size:10px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2); }
+.bill-link{ color:inherit; text-decoration:none; border-bottom:1px solid transparent; }
+.bill-link:hover{ border-bottom-color:var(--ink); }
+.bill-link:focus-visible{ outline:2px solid var(--ink); outline-offset:3px; }
+
+/* ---- a single-item page (one bill): the site gutter, since body has none ----
+   Every block on the site carries its own padding; the bill page's <main> had
+   none, so its content ran to the page edges and the tally grid — built for the
+   ~600px ledger card — stretched full width and clipped its count column. */
+.single{ max-width:78ch; padding:6px var(--gap) 40px; }
+.single > .stage{ margin:0 0 16px; }
+.single .tallies{ max-width:560px; }
+/* A four-column row at EVERY width. The narrow-viewport rule (max-width:600px)
+   pushes .tcount into column 3, which is right for the ledger card but on this
+   page stacks the count under the percentage and wraps it — so undo it here. */
+.single .tallies .trow{ grid-template-columns:78px 1fr 62px 132px; gap:14px; }
+.single .tallies .tcount{ grid-column:auto; white-space:nowrap; }
+.single .tallies .tpct{ font-size:22px; }
+.single .act{ margin:22px 0 10px; }
+.single .act .hint{ display:block; margin-top:10px; }
+/* The site nav is a FOOTER (DESIGN.md §7), which is a dead end on a 28-action page.
+   A deep page needs its own way out, at the top. */
+.single .back{ margin:0 0 16px; }
+.single .back a{
+  font-size:11.5px; letter-spacing:var(--ds); text-transform:uppercase;
+  color:var(--ink-2); text-decoration:none;
+  border-bottom:1px solid var(--rule-hard); padding-bottom:2px;
+}
+.single .back a:hover{ color:var(--ink); }
+
+/* ---- the aside (DESIGN.md §1, the naming rule): same register as everything else,
+   no colour, never explained, and it never touches the tallies or the gap. */
+.aka{ margin:6px 0 0; font-size:11.5px; color:var(--ink-2); }
+.aka b{ color:var(--ink); }
+.masthead .aka{ grid-column:1 / -1; }
+.note .aka{ display:block; margin-top:8px; }

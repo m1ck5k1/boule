@@ -36,8 +36,9 @@ def build(db: str, out: Path, base_path: str = "", today: str | None = None) -> 
         # Every route the nav can reach, rendered through the same function the
         # server uses. Emitting only index.html left three nav links pointing at
         # files that did not exist.
-        for path, filename, _label in render.ROUTES:
+        for path, filename, _label in render.routes_for(con):
             target = out / filename
+            target.parent.mkdir(parents=True, exist_ok=True)   # per-bill pages nest
             target.write_text(render.render_route(path, con, today, base_path),
                               encoding="utf-8")
             written.append(target)

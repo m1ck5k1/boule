@@ -24,42 +24,57 @@
 
 <h3>What we collect</h3>
 
-<h4>If you sign in with Google</h4>
-<p>We request exactly three scopes, and nothing else:</p>
-<ul>
-  <li><code>openid</code> — a stable, opaque account identifier</li>
-  <li><code>email</code> — your email address</li>
-  <li><code>profile</code> — your name and profile picture</li>
-</ul>
+<h4>There is no sign-in, and no account</h4>
 <p>
-  We do not request access to your Gmail, Drive, Calendar, Contacts, or anything
-  else. We cannot read your mail. We do not receive your Google password.
+  Boule does not ask who you are. There is no account, no email address, no
+  password, and no Google or Microsoft sign-in. We are not in the business of
+  identity, and we do not collect it.
+</p>
+<p>
+  Instead, the <strong>installed app is issued a key when you install it</strong>,
+  and it keeps it. That key does two things and nothing else: it lets the server
+  recognise that this device has already had its say on a particular bill, and it
+  lets the record label a reading as coming from an installed app rather than a
+  browser. It is not an identity. It holds nothing about you, and it is
+  <strong>never published</strong>.
 </p>
 
-<h4>When you vote</h4>
+<h4>When you record a reading</h4>
 <ul>
-  <li>which bill, and <strong>which version of that bill</strong> you voted on</li>
-  <li>your choice, and any later change of choice</li>
-  <li>the time the vote reached our server</li>
-  <li>a provenance label recording <em>how</em> your identity was established</li>
+  <li>which bill, and <strong>which version of that bill</strong> you read</li>
+  <li>your choice, and any later change of choice — a change <em>adds</em> a record;
+      it never edits one</li>
+  <li>the time the reading reached our server, used to stamp the stage, and
+      coarsened to the <em>day</em> before anything is published</li>
+  <li>a provenance label: <code>device</code> (the installed-app key above) or
+      <code>anonymous</code> (a browser, standing on nothing durable)</li>
+  <li>a hash of your network address, held by the server only to spot a burst of
+      readings from one network. It is <strong>never published</strong>, and it
+      <strong>expires 30 days after the reading</strong>.</li>
 </ul>
 
 <h4>Technical data</h4>
 <p>
   Our server necessarily sees the IP address of any request, as every web server
-  does. See "Not yet decided" below for how long we keep it.
+  does. It is hashed immediately, kept only as a hash for <strong>30 days</strong> to
+  spot a burst of readings from one network, and then deleted. The raw address is
+  never written to the voting record.
+</p>
+<p>
+  From that request we also derive an <strong>approximate state</strong> — coarsely,
+  and sometimes wrongly (a VPN or a mobile network can put the estimate somewhere
+  else entirely). It is added to a <em>count</em> and immediately discarded: never
+  attached to a reading, never published below state level, and at that level only
+  when the counts are large enough that no individual is visible in them. The data is
+  here to help, not to be abused.
 </p>
 
-<h3>How we use Google user data</h3>
+<h3>No Google data, and no third parties</h3>
 <p>
-  For two things only: to show you your own voting record, and to label each vote
-  with its provenance tier so a reader can see how strongly identity was
-  established. That is the entire purpose.
-</p>
-<p>
-  <strong>Boule's use of information received from Google APIs will adhere to the
-  <a href="https://developers.google.com/terms/api-services-user-data-policy">Google
-  API Services User Data Policy</a>, including the Limited Use requirements.</strong>
+  Boule holds no Google data, because it never asks Google for anything. An earlier
+  draft of this policy described a Google sign-in; that plan was dropped, so nothing
+  here rests on it. There is no sign-in, no third-party account, and no data
+  received from any external API about you.
 </p>
 
 <h3>What we never do</h3>
@@ -67,41 +82,54 @@
   <li>No advertising, and no advertising identifiers.</li>
   <li>No selling, renting, or sharing personal data with anyone.</li>
   <li>No tracking you across other websites.</li>
-  <li>No transferring Google user data to third parties except as needed to provide
-      Boule, to comply with the law, or as part of a merger — and never for
-      advertising.</li>
+  <li>No third-party data of any kind, from Google or anyone else.</li>
   <li>No automated decision-making about you. Boule does not decide anything; that
       is the point of it.</li>
 </ul>
 
 <h3>What is published</h3>
 <p>
-  The tally is meant to be auditable, so the <em>votes</em> are intended to be
-  publishable as a dataset: counts, and anonymised records. Published records
-  carry no name, no email address, and no account identifier. We do not publish
-  who voted.
+  The ledger is published, because a tally nobody can check is just a claim.
+  Published readings carry the bill, the version, the choice, the <em>day</em>
+  (never a precise time), and a <strong>random pseudonym re-issued for every
+  bill</strong> — so no reading can be linked to a device, or to that same device's
+  reading on any other bill.
+</p>
+<p>
+  <strong>Never published:</strong> your network address or any hash of it, the
+  device key, any name or email (we hold none), precise times, or anything else that
+  could single out a person. The standard is written field by field in
+  <a href="https://github.com/m1ck5k1/boule/blob/main/DATA.md">DATA.md</a>, behind a
+  single absolute rule — <em>nothing we publish may be used to identify or target
+  anyone, on any level.</em> The data is here to help, not to be abused.
+</p>
+<p>
+  <strong>The published readings do not stay published for ever.</strong> Each release
+  carries an expiry — currently <strong>90 days</strong> — and the reading-level release
+  is retired when it closes. What remains is the <em>counts</em> — the tallies, and the
+  day-by-day figures behind them. Permanent numbers, expiring evidence.
 </p>
 
-<h3>Retention and your rights</h3>
+<h3>Retention, and what you can ask for</h3>
 <p>
-  You can ask us to delete your account, and we will. Boule's vote record is
-  append-only and is designed never to be rewritten — that is what makes the tally
-  worth trusting — so deletion works in two parts, and we would rather say this
-  plainly than bury it:
+  There is no account to delete, because there is no account. What you can do is
+  <strong>reset your device key</strong>. Boule's record is append-only and is
+  designed never to be rewritten — that is what makes the tally worth trusting — so
+  the honest position, said plainly rather than buried, is:
 </p>
 <ul>
   <li>
-    <strong>Your identity link is destroyed.</strong> The association between your
-    account and your votes is removed, so those votes become permanently
-    unlinkable to you.
+    <strong>A published reading is retired when its release window closes</strong>, and
+    the count it produced stays for ever. An anonymous count is not a fact about a
+    person — and it is the only thing that persists.
   </li>
   <li>
-    <strong>The vote itself remains as an anonymous count.</strong> It stays in the
-    tally, with nothing that points back to you.
+    <strong>Resetting the key erases nothing — it stops the attribution going
+    forward.</strong> This device's future readings stand apart from its past ones.
   </li>
   <li>
     <strong>Changing your mind is a new record, not an edit.</strong> If you
-    withdraw a vote, Boule adds a record saying so. The earlier record stays, and
+    withdraw a reading, Boule adds a record saying so. The earlier record stays, and
     the current tally ignores it. Nothing is rewritten.
   </li>
 </ul>
@@ -117,16 +145,18 @@
   they are settled:
 </p>
 <ul>
-  <li><strong>IP retention.</strong> Whether the raw address is discarded
-      immediately, retained briefly for abuse prevention, or stored only as a
-      salted hash.</li>
-  <li><strong>Whether an email address is stored at all</strong>, or only the
-      opaque account identifier.</li>
-  <li><strong>How long a deleted account's anonymised votes remain in a published
-      dataset</strong>, if it has already been published.</li>
   <li><strong>Whether analytics are collected</strong>, and if so they will be
       aggregate and anonymous — never per-person.</li>
 </ul>
+<p>
+  <strong>Settled since the first draft of this policy:</strong> no email is stored,
+  because none is collected; there is no account and no sign-in; the network address
+  is kept only as a hash and <strong>expires after 30 days</strong>; location is
+  derived coarsely, counted and discarded (never attached to a reading), and published
+  only as a state-level count once the cells are large enough to be safe; a published
+  reading is retired when its release window closes, while the counts it produced stay
+  for ever; and the published-dataset standard is written down rather than deferred.
+</p>
 
 <h3>Changes</h3>
 <p>

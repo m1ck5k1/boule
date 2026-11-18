@@ -13,6 +13,25 @@ looks like and, more importantly, what is **forbidden**.
 
 If yes, the design is inside the system. If no, it has drifted back toward the brochure.
 
+### The naming rule — the joke keeps a straight face
+
+> **Boule is also known as Boule Schit. It is never explained, never coloured, never set apart.**
+
+- **British irony is structural, not announced.** The words are laid out in the same
+  register as everything else, and the page never acknowledges them. A joke that is
+  labelled, or set in a different typeface, or winked at, is not British — it is a novelty.
+- **Two placements, both in the flattest spot available.** The dictionary entry in the
+  masthead (*Boule Schit /ˌbuːl ˈʃɪt/ — (n.) 1. a council that prepared the motions;
+  2. what became of them.*) and the *also known as* line in the footer small print.
+  Nowhere else.
+- **It never touches the numbers.** Not the vote button, not the tallies, not the gap.
+  Decorating the legible register is how civic-tech funk fails. The joke lives *around*
+  the data, never on it.
+- **The name does not change.** Repo, URL and wordmark stay `boule` — this is what the
+  trade calls it, not what it is registered as.
+- **The LOUD register may shout it.** On a poster, a QR card or social it may be the
+  headline, larger than the wordmark. In the product it is a footnote.
+
 ---
 
 ## 2. What is banned, and why
@@ -57,9 +76,16 @@ grids, monument statistics, centred stacks, emoji, and any colour used for mood.
 --rule       #D9D5CC    hairlines
 --track      #E7E3DA    empty bar track
 --signal     #C8442A    THE GAP. Nothing else. Ever.
+--ch-house   #DCE4EC    chamber of origin: House   (not the signal family)
+--ch-senate  #E8DFC6    chamber of origin: Senate  (not the signal family)
 ```
 
-Inverted ("ink") mode swaps paper/ink; `--signal` lifts to `#E4643F` for contrast on dark.
+Inverted ("ink") mode swaps paper/ink; `--signal` lifts to `#E4643F` for contrast on dark, and
+the chamber tints darken to `#1D2933` / `#2C2818`.
+
+> **Known gap:** the chamber tints are deliberately quiet (see the colour law), and on the ink
+> ground they only just separate. Tighten them when ink mode is actually reachable — it has no
+> toggle and no `prefers-color-scheme` today, so no reader can see it yet.
 
 ### Type
 
@@ -127,6 +153,14 @@ that is not a gap, which breaks the colour law.
 - **State is carried by form, not hue** — an open bill has a *solid* dot, a closed one a
   *hollow* dot. Nav current-page is an ink underline, not a coloured one.
 - The single exception: focus rings may use `--signal` (accessibility beats purity).
+- **One other colour role exists: `--ch-house` / `--ch-senate`, the chamber a bill starts in.** It
+  sits deliberately *outside* the signal family, so it can never be mistaken for the gap. It is
+  information, not ornament: the chamber a bill starts in decides which body votes first, and it is
+  the one thing a reader wants at a glance once a list mixes the two. Types are mapped by chamber,
+  so the rule covers all eight and not merely HR and S.
+  - **Never colour-alone.** The letterform (HR / S) is always present, so the distinction survives
+    monochrome and colour-blindness. An unmapped type takes the neutral track tint rather than
+    being silently handed a chamber it does not have.
 
 ---
 
