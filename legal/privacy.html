@@ -64,8 +64,9 @@
   From that request we also derive an <strong>approximate state</strong> — coarsely,
   and sometimes wrongly (a VPN or a mobile network can put the estimate somewhere
   else entirely). It is added to a <em>count</em> and immediately discarded: never
-  attached to a reading, and <strong>never published</strong>. The data is here to
-  help, not to be abused.
+  attached to a reading, never published below state level, and at that level only
+  when the counts are large enough that no individual is visible in them. The data is
+  here to help, not to be abused.
 </p>
 
 <h3>No Google data, and no third parties</h3>
@@ -102,6 +103,12 @@
   single absolute rule — <em>nothing we publish may be used to identify or target
   anyone, on any level.</em> The data is here to help, not to be abused.
 </p>
+<p>
+  <strong>The published readings do not stay published for ever.</strong> Each release
+  carries an expiry, and the reading-level release is retired when its window closes.
+  What remains is the <em>counts</em> — the tallies, and the day-by-day figures behind
+  them. Permanent numbers, expiring evidence.
+</p>
 
 <h3>Retention, and what you can ask for</h3>
 <p>
@@ -112,9 +119,9 @@
 </p>
 <ul>
   <li>
-    <strong>A reading already published stays published.</strong> It carries nothing
-    that identifies you (see above), which is exactly why it can stay: an anonymous
-    count is not a fact about a person.
+    <strong>A published reading is retired when its release window closes</strong>, and
+    the count it produced stays for ever. An anonymous count is not a fact about a
+    person — and it is the only thing that persists.
   </li>
   <li>
     <strong>Resetting the key erases nothing — it stops the attribution going
@@ -145,10 +152,10 @@
   <strong>Settled since the first draft of this policy:</strong> no email is stored,
   because none is collected; there is no account and no sign-in; the network address
   is kept only as a hash and <strong>expires after 30 days</strong>; location is
-  derived coarsely, counted, discarded, and <strong>never published</strong>; a
-  reading already published stays published, because it carries nothing that could
-  identify anyone; and the published-dataset standard is written down rather than
-  deferred.
+  derived coarsely, counted and discarded (never attached to a reading), and published
+  only as a state-level count once the cells are large enough to be safe; a published
+  reading is retired when its release window closes, while the counts it produced stay
+  for ever; and the published-dataset standard is written down rather than deferred.
 </p>
 
 <h3>Changes</h3>

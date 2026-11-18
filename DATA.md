@@ -22,6 +22,30 @@ single out one person is not anonymous, and this project does not get to use a w
 
 ---
 
+## Two tiers: permanent numbers, expiring evidence
+
+Publication is **time-limited**, and that limit is what makes publishing the row-level data
+defensible: the harm it could do is bounded in time rather than archived for ever.
+
+| Tier | What | Lifetime |
+|---|---|---|
+| **Evidence** — the published readings (the audit pack below) | the rows themselves, so anyone can recompute the tally | **a rolling window** — retired when it closes |
+| **Conclusions** — the published aggregates | the tally, the gap, per-day counts, state digests | **permanent** |
+| Internal counters | coarse region × bill × version × day × choice | permanent (a count holds nothing personal) |
+| The address hash | anti-abuse only | 30 days |
+
+**Nothing about a person persists — neither in our store nor in the public record. Only the
+counts are for ever.**
+
+**The honest consequence.** Once a window closes, its tally can no longer be *recomputed from
+the evidence* — the aggregate stands alone as the record. That is the trade, and it is the
+right way round. What makes it acceptable is that **the aggregate keeps the shape**: per-day
+counts are permanent, and a burst of readings is visible in them. Anomaly detection — the
+reason this ledger is public at all — does not need the rows. It needs the counts, and the
+counts never expire.
+
+---
+
 ## Never published — no exceptions
 
 | Never | Why |
@@ -33,13 +57,14 @@ single out one person is not anonymous, and this project does not get to use a w
 | **User agent, headers, referrer** | Quasi-identifiers; a combination narrows a crowd to a person. |
 | **Precise timestamp (seconds)** | Time-to-the-second plus any other field is a fingerprint. The day is the finest granularity we publish. |
 | **Row order / insertion sequence** | The sequence is metadata. An export is shuffled, and no ordinal is carried. |
-| **Geography of any kind** | Country, region, timezone. All quasi-identifiers, all excluded. An approximate *state* may be derived at ingest — then folded into a count and discarded (below) — but it is never a field on a row and never published. |
+| **Any geography below the state** | Country, region, town, timezone. Quasi-identifiers, all excluded. Never a field on a reading, and never published below state level. A **state-level count** may be published once `k` holds (see Aggregates). |
 
 ---
 
 ## Capture and retention — internal, and expiring
 
-Geography is **captured, never stored as a record, and never published.**
+Geography is **captured, never stored per reading, and published only as a state-level count** —
+and only once the cells prove out.
 
 - **Derived at ingest, from the connection.** A bundled GeoIP table resolves the request's
   approximate **state** — no third-party lookup, so the address never leaves the box.
@@ -91,6 +116,15 @@ Counts per `(bill, version, choice)` and per `(bill, version, day, choice)`.
 never zeroed and never dropped silently. Same rule as the gap: an absent number is a fact; a
 zero is a claim.
 
+**State digests — published, at a far higher `k`.** Counts per `(state, bill, version, day,
+choice)` are published **only** once every cell clears **`k = 50`**. Opinion plus location is
+special-category data in law and a targeting list in practice, and in a small population a
+"statistic" is a list of names. Below the threshold, the cell is withheld — and a state whose
+cells never clear `k` simply never appears, which is itself the honest answer. Geography is
+never published below state level, and never joined to a reading.
+
+**These aggregates are permanent. The readings behind them are not** — see *Two tiers*, above.
+
 ---
 
 ## The honest limit — and where it lands
@@ -117,6 +151,8 @@ build:
 4. **NO FINE TIME** — every `day` is a date, never a datetime.
 5. **NO SMALL CELL** — every aggregate cell is either ≥ `k` or explicitly `withheld`.
 6. **SHUFFLED** — the export order is not the insertion order.
+7. **DATED** — the row-level release carries its own `retire_after`. Evidence expires; aggregates
+   do not. **A release with no expiry is not ready to publish.**
 
 A failure is a **stop**, not a warning.
 
@@ -128,3 +164,4 @@ A failure is a **stop**, not a warning.
 |---|---|
 | 2026-11-18 | Standard established. The device model settled; the ledger becomes a published artifact; the absolute no-identification rule adopted; `k = 10`; per-bill pseudonyms and day-granularity timestamps chosen as the anti-linkage device. |
 | 2026-11-18 | **Geography settled.** State-level is analytically the right grain (it is the unit the official record is territorial in — the Senate; town-level has no counterpart and is dropped). Geography is captured **internally only**, derived at ingest, folded into a counter and discarded — never a field on a row, never published. `ip_hash` given a **30-day TTL** and moved to a separate mutable `vote_nets` table, because expiry cannot live inside an append-only table. |
+| 2026-11-18 | **Corrected — expiry is the licence to publish, not internal hygiene.** The expiry exists so the ledger *can* be public, which makes publication the point and expiry the safeguard. Two tiers: **expiring evidence, permanent numbers.** The published readings are a rolling window; the aggregates — the tally, the gap, per-day counts, state digests — are permanent, because **the aggregate keeps the shape** and a burst is visible in it, so anomaly detection survives the retirement of the rows. State digests published at **`k = 50`**. Gate gained criterion 7: a release with no expiry is not ready to publish. |
