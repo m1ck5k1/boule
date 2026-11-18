@@ -13,6 +13,7 @@ votes yet" is a fact. That distinction is the whole product.
 from __future__ import annotations
 
 import html
+import re
 import sqlite3
 from datetime import date
 from pathlib import Path
@@ -48,6 +49,26 @@ ROUTES: list[tuple[str, str, str]] = [
     ("/me", "me.html", "Me"),
     ("/privacy", "privacy.html", ""),
 ]
+
+# A bill detail page is a DYNAMIC route: one URL per bill in the database. It is
+# not in ROUTES because ROUTES is the fixed floor; routes_for() adds the bills.
+BILL_PATH = re.compile(r"^/bill/(\d+)/([a-z]+)/(\d+)/?$")
+
+
+def routes_for(con: sqlite3.Connection) -> list[tuple[str, str, str]]:
+    """ROUTES plus one page per bill.
+
+    The static build and the twin gate both call this, so neither can disagree
+    about which pages are real — the class of bug the LINKS check was added for.
+    """
+    out = list(ROUTES)
+    for r in con.execute(
+        "SELECT congress, bill_type, number FROM bills ORDER BY bill_type, number"
+    ).fetchall():
+        congress, bill_type, number = r[0], r[1], r[2]
+        out.append((f"/bill/{congress}/{bill_type}/{number}",
+                    f"bill/{congress}/{bill_type}/{number}/index.html", ""))
+    return out
 
 
 def page(title: str, body: str, current_nav: str = "Today",
@@ -146,6 +167,149 @@ def confirm_vote(bill_label: str, title: str, choice: str, hidden: str,
     return page("Boule — confirm your vote", body, "", base_path)
 
 
+CONGRESS_SLUG = {
+    "hr": "house-bill", "s": "senate-bill",
+    "hjres": "house-joint-resolution", "sjres": "senate-joint-resolution",
+    "hconres": "house-concurrent-resolution", "sconres": "senate-concurrent-resolution",
+    "hres": "house-resolution", "sres": "senate-resolution",
+}
+
+
+def _ordinal(n: int) -> str:
+    if 10 <= n % 100 <= 20:
+        return f"{n}th"
+    return f"{n}{ {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th') }"
+
+
+def congress_url(congress: int, bill_type: str, number: int) -> str:
+    slug = CONGRESS_SLUG.get((bill_type or "").lower(), "house-bill")
+    return f"https://www.congress.gov/bill/{_ordinal(congress)}-congress/{slug}/{number}"
+
+
+def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: int,
+              base_path: str = "") -> str:
+    """The second screen of the floor: one bill, its real record, and the vote.
+
+    The reading stack is the government's own material — L1 is CRS, L2 is a diff of
+    the text, L3 is a link. Boule must not narrate the bill, so an unwired layer is
+    shown as unwired, never filled with an AI-written summary.
+    """
+    row = con.execute(
+        """
+        SELECT b.*, s.stage, s.chamber, s.current_chamber
+          FROM bills b LEFT JOIN stages s USING (congress, bill_type, number)
+         WHERE b.congress = ? AND b.bill_type = ? AND b.number = ?
+        """, (congress, bill_type, number)).fetchone()
+    if not row:
+        raise KeyError(f"no bill {congress}/{bill_type}/{number}")
+
+    version = con.execute(
+        "SELECT version_code, label FROM bill_versions "
+        "WHERE congress = ? AND bill_type = ? AND number = ? "
+        "ORDER BY first_seen DESC, version_id DESC LIMIT 1",
+        (congress, bill_type, number)).fetchone()
+
+    counts: dict = {}
+    if version:
+        for r in con.execute(
+            "SELECT choice, COUNT(*) FROM votes "
+            "WHERE congress = ? AND bill_type = ? AND number = ? AND version_code = ? "
+            "GROUP BY choice",
+            (congress, bill_type, number, version["version_code"])).fetchall():
+            counts[r[0]] = r[1]
+    yea, nay = counts.get("yea", 0), counts.get("nay", 0)
+    total = yea + nay
+    if total:
+        pct = round(100 * yea / total)
+        public_pct, public_count = f"{pct}%", f"{yea} yea · {nay} nay"
+        sr = (f"Public tally: {yea} for, {nay} against — {total} cast, {pct}% in favour. "
+              "No official tally recorded yet, so no gap can be reported.")
+    else:
+        public_pct, public_count = "—", "—"
+        sr = "No public tally yet. No official tally recorded yet."
+
+    label = f"{(bill_type or '').upper()} {number}"
+    stage = stage_text(row["stage"], row["chamber"], row["current_chamber"])
+
+    if version:
+        vote_ui = f"""<form class="votebox" method="post" action="/api/vote">
+        <input type="hidden" name="congress" value="{esc(congress)}">
+        <input type="hidden" name="bill_type" value="{esc(bill_type)}">
+        <input type="hidden" name="number" value="{esc(number)}">
+        <input type="hidden" name="version_code" value="{esc(version['version_code'])}">
+        <input type="hidden" name="next" value="{esc(base_path)}/bill/{esc(congress)}/{esc(bill_type)}/{esc(number)}">
+        <button type="submit" class="vote" name="choice" value="yea">Yea</button>
+        <button type="submit" class="vote" name="choice" value="nay">Nay</button>
+      </form><span class="hint">click once, click to confirm</span>"""
+    else:
+        vote_ui = '<span class="voted">Voting not open — no text version</span>'
+
+    actions = con.execute(
+        "SELECT action_date, action_type, text FROM actions "
+        "WHERE congress = ? AND bill_type = ? AND number = ? ORDER BY action_date, action_id",
+        (congress, bill_type, number)).fetchall()
+    timeline = "\n".join(
+        f'        <li class="arow"><time datetime="{esc(a[0])}">{esc(a[0])}</time>'
+        f'<span class="atype">{esc(a[1] or "")}</span>'
+        f'<span class="atext">{esc(a[2])}</span></li>'
+        for a in actions) or '        <li class="arow"><span class="atext">No actions recorded.</span></li>'
+
+    introduced = human_date(row["introduced_on"]) if row["introduced_on"] else "date unknown"
+    ver_line = (f"Version pinned: <b>{esc(version['version_code'])} · {esc(version['label'])}</b>"
+                " — this vote is on that text." if version else "No text version recorded yet.")
+
+    body = masthead([
+        f'{esc(label)} — <b>{esc(row["title"] or "(no title)")}</b>',
+        f"Introduced {esc(introduced)}",
+    ]) + f"""
+<main id="main">
+  <p class="stage"><span class="dot" aria-hidden="true"></span>{esc(stage)}</p>
+
+  <p class="sr-only">{esc(sr)}</p>
+  <div class="tallies">
+    <div class="trow"><span class="tlabel">Public</span><span class="track"></span>
+      <span class="tpct">{esc(public_pct)}</span>
+      <span class="tcount">{esc(public_count)}</span></div>
+    <div class="trow"><span class="tlabel">Official</span><span class="track"></span>
+      <span class="tpct">—</span><span class="tcount">—</span></div>
+    <p class="nogap">The public tally is live. The official tally is not recorded yet,
+      so the gap cannot be shown.</p>
+  </div>
+
+  <div class="act" style="text-align:left">
+    {vote_ui}
+  </div>
+
+  <h2 class="sect-h">The reading stack — none of it ours</h2>
+  <div class="layer">
+    <div class="lh"><span class="ltag">L0 — one line</span><span class="lsrc">condensed from CRS</span></div>
+    <p class="lbody notwired">Not wired yet — needs the CRS summary feed.</p>
+  </div>
+  <div class="layer">
+    <div class="lh"><span class="ltag">L1 — official summary</span><span class="lsrc">source: CRS</span></div>
+    <p class="lbody notwired">Not wired yet. Boule does not write this layer.</p>
+  </div>
+  <div class="layer">
+    <div class="lh"><span class="ltag">L2 — what changed</span><span class="lsrc">source: diff_bills.sh</span></div>
+    <p class="lbody notwired">Tool exists, not yet wired to the UI.</p>
+  </div>
+  <div class="layer">
+    <div class="lh"><span class="ltag">L3 — full text</span><span class="lsrc">source: the bill itself</span></div>
+    <p class="lbody">Read the bill on congress.gov —
+      <a href="{esc(congress_url(congress, bill_type, number))}" rel="noopener">{esc(label)}, {esc(_ordinal(congress))} Congress</a>.</p>
+  </div>
+
+  <h2 class="sect-h">Actions — {len(actions)} recorded</h2>
+  <ul class="atl">
+{timeline}
+  </ul>
+
+  <p class="hint">{ver_line}</p>
+</main>
+"""
+    return page(f"Boule — {label}", body, "Bills", base_path)
+
+
 def render_route(path: str, con, today: str, base_path: str = "") -> str:
     """One renderer for the server AND the static build.
 
@@ -158,6 +322,9 @@ def render_route(path: str, con, today: str, base_path: str = "") -> str:
         return privacy_page(base_path)
     if path in ("/bills", "/gap", "/me"):
         return stub_page(path, base_path)
+    m = BILL_PATH.match(path)
+    if m:
+        return bill_page(con, int(m.group(1)), m.group(2), int(m.group(3)), base_path)
     raise KeyError(f"no route for {path}")
 
 
@@ -199,12 +366,14 @@ def masthead(dateline_bits: list[str]) -> str:
 """
 
 
-def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict) -> str:
+def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict, base_path: str = "") -> str:
     bill_type = (row["bill_type"] or "").upper()
     number = row["number"]
     title = row["title"] or "(no title)"
     stage = stage_text(row["stage"], row["chamber"], row["current_chamber"])
     label = f"{bill_type} {number}"
+    detail_href = (f"{base_path}/bill/{esc(row['congress'])}/"
+                   f"{esc((row['bill_type'] or '').lower())}/{esc(number)}")
 
     yea = int(tally.get("yea", 0))
     nay = int(tally.get("nay", 0))
@@ -237,7 +406,7 @@ def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict) -> str:
     return f"""    <li><article class="bill" aria-labelledby="b-{esc(bill_type)}-{esc(number)}">
       <div>
         <div class="bill-id">{esc(label)}</div>
-        <h2 class="bill-title" id="b-{esc(bill_type)}-{esc(number)}">{esc(title)}</h2>
+        <h2 class="bill-title" id="b-{esc(bill_type)}-{esc(number)}"><a class="bill-link" href="{detail_href}">{esc(title)}</a></h2>
         <p class="stage"><span class="dot" aria-hidden="true"></span>{esc(stage)}</p>
       </div>
 
@@ -310,7 +479,7 @@ def today_page(con: sqlite3.Connection, today: str, base_path: str = "") -> str:
                 for c in ("yea", "nay")}
 
     if rows:
-        ledger = "\n".join(bill_row(r, r["version_code"], tally_for(r)) for r in rows)
+        ledger = "\n".join(bill_row(r, r["version_code"], tally_for(r), base_path) for r in rows)
     else:
         ledger = ('    <li class="empty">No bills ingested yet. Run '
                   '<code>python3 engine/poll.py</code>.</li>')

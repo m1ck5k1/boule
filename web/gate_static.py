@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import re
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -48,6 +49,13 @@ def main() -> int:
     ap.add_argument("--db", default=str(ROOT / "engine" / "boule.db"))
     args = ap.parse_args()
 
+    # Every route, including the per-bill pages — the build and this gate must agree
+    # on the full set or they would twin-check a subset and wave drift through.
+    con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
+    con.row_factory = sqlite3.Row
+    routes = render_mod.routes_for(con)
+    con.close()
+
     out = Path(tempfile.mkdtemp(prefix="boule-dist-"))
     written = build_mod.build(args.db, out)
     names = {p.name for p in written}
@@ -60,7 +68,7 @@ def main() -> int:
     # 2. TWIN — the whole point, and for EVERY route, not just index
     built = (out / "index.html").read_text(encoding="utf-8")
     drifts = []
-    for path, filename, _label in render_mod.ROUTES:
+    for path, filename, _label in routes:
         built_text = (out / filename).read_text(encoding="utf-8")
         try:
             live = urllib.request.urlopen(f"{args.server}{path}", timeout=10).read().decode("utf-8")
@@ -70,7 +78,7 @@ def main() -> int:
         if built_text != live:
             drifts.append(f"{path}: static {sha(built_text)} vs served {sha(live)}")
     check("TWIN", not drifts,
-          f"{len(render_mod.ROUTES)} routes byte-identical"
+          f"{len(routes)} routes byte-identical"
           if not drifts else "; ".join(drifts[:3]))
 
     # 3. BASE PATH — look for URLs that are root-absolute but MISSING the prefix
@@ -84,7 +92,7 @@ def main() -> int:
           else f"unprefixed: {bare_abs[:4]}")
 
     # 4. LINKS — every referenced path must resolve to a file we actually emitted
-    route_files = {p: f for p, f, _ in render_mod.ROUTES}
+    route_files = {p: f for p, f, _ in routes}
     refs = set(re.findall(r'(?:href|src)="([^"#]+)"', built))
     local = {r for r in refs if not r.startswith(("http://", "https://", "mailto:"))}
     missing = []

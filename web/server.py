@@ -96,24 +96,17 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith("/static/"):
             return self._static(path)
 
-        if path in ("/", "/today", "/privacy", "/bills", "/gap", "/me"):
-            con = self._db()
-            try:
-                body = render.render_route(path, con, date.today().isoformat())
-            except KeyError:
-                con.close()
-                return self._send(404, "no such route", "text/plain; charset=utf-8")
-            finally:
-                con.close()
-            return self._send(200, body)
-
-        body = render.page(
-            "Boule — not found",
-            render.masthead(["<b>404</b> — not found"])
-            + '<main id="main"><p class="empty">No such page.</p></main>',
-            "",
-        )
-        return self._send(404, body)
+        # Any route render knows about — including the per-bill detail pages, which
+        # are dynamic. An unknown path falls through to render's KeyError -> 404.
+        con = self._db()
+        try:
+            body = render.render_route(path, con, date.today().isoformat())
+        except KeyError:
+            con.close()
+            return self._send(404, "no such route", "text/plain; charset=utf-8")
+        finally:
+            con.close()
+        return self._send(200, body)
 
     def do_POST(self) -> None:                            # noqa: N802
         """S3 — the only write in the whole system: one append-only vote row."""
