@@ -67,25 +67,36 @@ and its representatives disagree is the thing nobody has.
 
 ## 5. The data
 
-Every vote is an append-only record. Anonymised, it is released for research.
+Every reading is an append-only record, and **the whole ledger is published** — because a number
+nobody can check is a claim, and this project exists to audit claims.
 
-- **Small.** One billion votes ≈ **40 GB** columnar. A laptop, not big data.
-- **Immutable.** Append-only; nothing is edited after the fact.
-- **Open.** The anonymised corpus is public. Foreign-journalism value, not just ours.
+- **Immutable.** Append-only; nothing is edited after the fact. A changed mind is a new row.
+- **Open.** What is published is the *evidence*, not a summary of it. Anyone can recompute every
+  tally Boule shows, and say so in public when we are wrong.
+- **Small.** One billion readings ≈ 40 GB columnar. A laptop, not big data.
 
-Caution carried forward: country/timezone/timestamp combinations are quasi-identifiers. Release
-aggregates and coarse buckets; do not release anything that singles out a person in a small
-group.
+**The publication rule is absolute: nothing Boule publishes may be used to identify, target or
+single out a person, on any level.** That is a constraint on the *standard*, not a hope, and it
+outranks every argument for richer data. `DATA.md` states what is published, what is never
+published, and why each field is there.
 
 ---
 
 ## 6. The identity stance
 
-**Identity is not Boule's problem to solve.** We do not invent proof-of-personhood, Sybil
-resistance, or eligibility rolls. We **delegate identity, and own the tally.**
+**Identity is not Boule's problem to solve — and Boule does not solve it.**
 
-Consequence: whether Boule is a *poll* or a *proxy vote* is a **configuration**, not a rewrite.
-That choice is a product decision to be made on the evidence, not baked in now.
+- **No accounts. No email. No sign-in. No identity provider.** We are not in the identity business.
+- **The unit of a reading is a device.** The installed app is issued a key at install and keeps it.
+  The server refuses a second reading from that key on the same `(bill, version)`.
+- **The claim is exactly that, and no more: one reading per device.** Not one per person. A phone
+  and a laptop are two devices; a reinstall is a new one. The wording must never overstate the unit.
+- **A browser reading is weaker, and is labelled so.** Browser storage can be cleared, so that
+  reading stands on nothing durable. The `provenance` column records which it was (`device` vs
+  `anonymous`), and the tally can say how many readings rest on something that persists.
+
+The pleasing symmetry: Congress's own tally is also scoped to *seats*, not to people. Neither
+number counts individuals; both count readings from units. Ours says which unit.
 
 ---
 
@@ -93,11 +104,13 @@ That choice is a product decision to be made on the evidence, not baked in now.
 
 Not a distributed ledger. Three things:
 
-1. **One identity provider** to start (Google sign-in), with a provenance tag on the vote.
-2. **One append-only votes table.** A vote is written once and never changed.
-3. **One signed daily root** of the tally, published. Enough that tampering is *detectable*.
+1. **A device key**, issued at install — the only credential, and it is not an identity.
+2. **One append-only votes table.** A reading is written once and never changed.
+3. **The whole ledger, published.** Not a summary of the tally — the readings themselves, to the
+   standard in `DATA.md`, so tampering is not merely *detectable* but *checkable* by anyone.
 
-That is the entire integrity story. It is enough.
+That is the entire integrity story. It is enough — and the third part is what gives the other two
+their force, because it hands the checking to everybody else.
 
 ---
 
