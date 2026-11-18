@@ -89,7 +89,12 @@ h1.wordmark{
 .ledger{ margin:0; padding:0; list-style:none; border-bottom:1px solid var(--rule); }
 .bill{
   display:grid;
-  grid-template-columns: minmax(230px,1fr) minmax(300px,1.35fr) auto;
+  /* the third column is a FIXED width, not `auto`. Each `.bill` is its own grid
+     container, so an auto-sized action column resolves differently per row
+     (button = 178px, "Record closed" = 111px) and drags the fr columns with it,
+     knocking column 2 out of alignment between rows. A fixed column keeps every
+     row on the same track. */
+  grid-template-columns: minmax(230px,1fr) minmax(300px,1.35fr) 190px;
   gap:22px; align-items:center;
   padding:20px var(--gap);
   border-top:1px solid var(--rule);
