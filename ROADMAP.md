@@ -61,6 +61,24 @@ exists.
 
 ---
 
+## Data sources — what feeds what
+
+The Schedule view exposed a gap in the pipeline: the poller only looks at **recent past**
+activity (`sort=updateDate desc` + a look-back window). Nothing supplies future dates.
+
+| Feed | Source | Status |
+|---|---|---|
+| Bills that recently moved | Congress.gov `/bill/{congress}?sort=updateDate desc` | ✅ live (existing poller) |
+| Stage history + roll calls | Congress.gov `/bill/.../actions` | ⛔ not wired |
+| **Future committee dates** | Congress.gov `/committee-meeting/{congress}/{chamber}` | ⛔ **not wired — required for Schedule** |
+| Future floor dates | House/Senate leadership schedules — **not in the API** | ⛔ not available |
+
+**Consequence:** the Schedule can only be as good as row 3. Floor votes rarely carry a date in
+advance, so most future entries will legitimately read **Expected** — undated — and the UI must
+say so rather than invent one. Same rule as the gap: if the date does not exist, do not draw it.
+
+---
+
 ## Phases
 
 ### Phase 0 — the mock ✅
