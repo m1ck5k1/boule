@@ -282,5 +282,11 @@ h1.wordmark{
 .single{ max-width:78ch; padding:6px var(--gap) 40px; }
 .single > .stage{ margin:0 0 16px; }
 .single .tallies{ max-width:560px; }
-.single .tallies .trow{ grid-template-columns:78px 1fr 62px 120px; }
-.single .act{ margin:20px 0 8px; }
+/* A four-column row at EVERY width. The narrow-viewport rule (max-width:600px)
+   pushes .tcount into column 3, which is right for the ledger card but on this
+   page stacks the count under the percentage and wraps it — so undo it here. */
+.single .tallies .trow{ grid-template-columns:78px 1fr 62px 132px; gap:14px; }
+.single .tallies .tcount{ grid-column:auto; white-space:nowrap; }
+.single .tallies .tpct{ font-size:22px; }
+.single .act{ margin:22px 0 10px; }
+.single .act .hint{ display:block; margin-top:10px; }

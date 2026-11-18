@@ -228,6 +228,15 @@ def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: in
         public_pct, public_count = "—", "—"
         sr = "No public tally yet. No official tally recorded yet."
 
+    # The drawn bars (DESIGN.md §5). PUBLIC fills in ink on a 0-100% scale; OFFICIAL
+    # stays empty and reads "—" because no roll-call is ingested — a forecast is not
+    # a gap, and a zero would be a claim.
+    pct_int = round(100 * yea / total) if total else None
+    tallies_html = (tally_row("Public", public_pct, public_count, fill_pct=pct_int)
+                    + tally_row("Official", "—", "—", fill_pct=None))
+    gap_note = ("No recorded vote yet — no gap to report." if total
+                else "No votes yet — no gap to report.")
+
     label = f"{(bill_type or '').upper()} {number}"
     stage = stage_text(row["stage"], row["chamber"], row["current_chamber"])
 
@@ -266,14 +275,9 @@ def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: in
   <p class="stage"><span class="dot" aria-hidden="true"></span>{esc(stage)}</p>
 
   <p class="sr-only">{esc(sr)}</p>
-  <div class="tallies">
-    <div class="trow"><span class="tlabel">Public</span><span class="track"></span>
-      <span class="tpct">{esc(public_pct)}</span>
-      <span class="tcount">{esc(public_count)}</span></div>
-    <div class="trow"><span class="tlabel">Official</span><span class="track"></span>
-      <span class="tpct">—</span><span class="tcount">—</span></div>
-    <p class="nogap">The public tally is live. The official tally is not recorded yet,
-      so the gap cannot be shown.</p>
+  <div class="tallies" aria-hidden="true">
+{tallies_html}
+    <p class="nogap">{esc(gap_note)}</p>
   </div>
 
   <div class="act" style="text-align:left">
@@ -366,6 +370,25 @@ def masthead(dateline_bits: list[str]) -> str:
 """
 
 
+def tally_row(label: str, pct: str, count: str, fill_pct: int | None = None,
+              off: bool = False) -> str:
+    """One drawn tally row (DESIGN.md §5).
+
+    The bar is decoration — the caller marks the block aria-hidden and carries the
+    figures in a spoken sentence. `fill_pct` is the 0-100 share the bar draws to;
+    None means "nothing recorded", so the track stays empty rather than showing a
+    zero, which would be a claim.
+    """
+    inner = ""
+    if fill_pct is not None:
+        cls = "fill off" if off else "fill"
+        inner = f'<span class="{cls}" style="--p:{fill_pct}%"></span>'
+    return (f'<div class="trow"><span class="tlabel">{esc(label)}</span>'
+            f'<span class="track">{inner}</span>'
+            f'<span class="tpct">{esc(pct)}</span>'
+            f'<span class="tcount">{esc(count)}</span></div>')
+
+
 def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict, base_path: str = "") -> str:
     bill_type = (row["bill_type"] or "").upper()
     number = row["number"]
@@ -387,6 +410,10 @@ def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict, base_path:
         public_pct, public_count = "—", "—"
         sr = ("No public tally yet. No official tally recorded yet. "
               "No gap can be reported without both.")
+
+    row_tallies = (tally_row("Public", public_pct, public_count,
+                             fill_pct=(round(100 * yea / total) if total else None))
+                   + tally_row("Official", "—", "—", fill_pct=None))
 
     # S3 — the ballot box. A plain form POST, no JS: the vote is the one write,
     # and it goes to the server, which stamps it and appends it.
@@ -412,18 +439,7 @@ def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict, base_path:
 
       <p class="sr-only">{esc(sr)}</p>
       <div class="tallies" aria-hidden="true">
-        <div class="trow">
-          <span class="tlabel">Public</span>
-          <span class="track"></span>
-          <span class="tpct">{esc(public_pct)}</span>
-          <span class="tcount">{esc(public_count)}</span>
-        </div>
-        <div class="trow">
-          <span class="tlabel">Official</span>
-          <span class="track"></span>
-          <span class="tpct">—</span>
-          <span class="tcount">—</span>
-        </div>
+        {row_tallies}
         <p class="nogap">No gap can be reported without both tallies.</p>
       </div>
 
