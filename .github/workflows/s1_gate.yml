@@ -1,0 +1,61 @@
+name: S1 Gate
+
+# Runs the S1 gate where the real CONGRESS_API_KEY lives, so the gate can pass
+# without a key on anyone's laptop. The key is never printed.
+#
+# Gate: for one real bill the DB holds its actions in order, the derived stage
+# does not contradict congress.gov, and `actions` refuses UPDATE and DELETE.
+
+on:
+  workflow_dispatch:
+    inputs:
+      congress:
+        description: Congress number
+        default: "119"
+      bill_type:
+        description: Bill type (hr, s, hjres ...)
+        default: "hr"
+      number:
+        description: Bill number
+        default: "10983"
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Stage rule unit tests
+        run: python3 engine/test_stages.py
+
+      - name: Ingest one real bill
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+        run: |
+          if [ -z "$CONGRESS_API_KEY" ]; then
+            echo "::error::CONGRESS_API_KEY secret is not set on this repo"
+            exit 1
+          fi
+          echo "CONGRESS_API_KEY is present (value never printed)"
+          python3 engine/ingest.py ${{ inputs.congress }} ${{ inputs.bill_type }} ${{ inputs.number }}
+
+      - name: S1 gate
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+        run: python3 engine/gate_s1.py ${{ inputs.congress }} ${{ inputs.bill_type }} ${{ inputs.number }}
+
+      - name: Upload the ingested database as evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boule-db-${{ inputs.congress }}-${{ inputs.bill_type }}-${{ inputs.number }}
+          path: engine/boule.db*
+          if-no-files-found: warn
+          retention-days: 14

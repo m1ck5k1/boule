@@ -16,8 +16,33 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
 
 BASE = "https://api.congress.gov/v3"
+
+
+def _load_dotenv() -> None:
+    """Minimal .env loader — stdlib only, no python-dotenv dependency.
+
+    A real environment variable ALWAYS wins, so CI can inject
+    CONGRESS_API_KEY as a GitHub Actions secret without a stale local file
+    shadowing it.
+    """
+    path = Path(__file__).resolve().parent.parent / ".env"
+    if not path.exists():
+        return
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and value and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_dotenv()
 
 # Cloudflare sits in front of api.congress.gov and rejects the default
 # "Python-urllib/3.12" User-Agent with `error code: 1010`. Identify the client
