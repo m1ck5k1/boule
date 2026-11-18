@@ -72,6 +72,14 @@ activity (`sort=updateDate desc` + a look-back window). Nothing supplies future 
 | Stage history + roll calls | Congress.gov `/bill/.../actions` | ⛔ not wired |
 | **Future committee dates** | Congress.gov `/committee-meeting/{congress}/{chamber}` | ⛔ **not wired — required for Schedule** |
 | Future floor dates | House/Senate leadership schedules — **not in the API** | ⛔ not available |
+| **CRS summary (L1)** | Congress.gov `/bill/.../summaries` | ⛔ **not wired — required for the Bill page** |
+| Bill full text (L3) | Congress.gov bill XML — `tools/ingest_bill.sh` | ✅ exists, not wired to the UI |
+| Version diff (L2) | `tools/diff_bills.sh` | ✅ exists, not wired to the UI |
+
+**CRS summaries are version-tagged** (`versionCode` + `actionDesc`, e.g. `00 / Introduced in
+House`), which lines up with the `(bill, version)` vote key: the summary shown can be pinned to
+the exact text being voted on. This is the only route to a defensible reading layer — Boule must
+not author it.
 
 **Consequence:** the Schedule can only be as good as row 3. Floor votes rarely carry a date in
 advance, so most future entries will legitimately read **Expected** — undated — and the UI must

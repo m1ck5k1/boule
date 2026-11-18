@@ -78,6 +78,30 @@ Inverted ("ink") mode swaps paper/ink; `--signal` lifts to `#E4643F` for contras
   the tagline on line 2.
 - **No icons.** Hierarchy comes from scale, weight, and rules.
 
+### The reading stack — four depths, none of them ours
+
+Nobody reads 214 pages, including the people who vote on them. So the Bill page is a **depth
+stack**, and the first three layers carry **no Boule-authored prose**:
+
+| Layer | Content | Author |
+|---|---|---|
+| **L0** | one line: what it does | condensed from CRS, attributed |
+| **L1** | the official CRS summary, pinned to the version being voted on | **CRS** |
+| **L2** | what changed since the last version | `diff_bills.sh` |
+| **L3** | the full text, one link to congress.gov | **the bill itself** |
+
+**The rule:** an AI summary of a bill is the same category of artefact Boule exists to audit. If
+Boule narrates the bill, Boule becomes a narrator with an agenda — indistinguishable from the
+corporate cost estimates it was built to check. So the reading layer is the government's own
+material, and every layer names its source.
+
+Where Boule *does* interpret, it is **boxed, labelled Opinion, and never the only text on the
+screen** — and it states that it was not written by CRS.
+
+**Accessibility note — target size.** WCAG 2.2 AA (2.5.8) requires **24×24 CSS px**, not 44; 44 is
+the AAA/Apple-HIG figure. Hold **≥44px on genuine controls** (buttons, nav links, skip link) and ≥24px
+on links that sit inline in a sentence, which 2.5.8 explicitly exempts.
+
 ### The vote button — a three-state rule
 
 The button is **not always on**. It appears when Boule can name the official vote the public
