@@ -106,9 +106,9 @@ def page(title: str, body: str, current_nav: str = "Today",
 </nav>
 <footer class="note">
   <b>Boule is a second tally that runs beside the real one, so the gap becomes
-  visible.</b> This is the read-only build: bills and their stages are real and
-  come from Congress.gov. Voting is not open yet, so no public tally and no gap
-  are shown — an empty tally is a fact, a zero would be a claim.
+  visible.</b> Bills and their stages are real and come from Congress.gov. Public
+  tallies are live; the official tally is not recorded yet, so no gap is shown —
+  an empty tally is a fact, a zero would be a claim.
   <span class="legal-links"><a href="{href('/privacy')}">Privacy</a></span>
 </footer>
 </body>
@@ -272,6 +272,7 @@ def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: in
         f"Introduced {esc(introduced)}",
     ]) + f"""
 <main id="main" class="single">
+  <p class="back"><a href="{esc(base_path)}/">&#8592; Today</a></p>
   <p class="stage"><span class="dot" aria-hidden="true"></span>{esc(stage)}</p>
 
   <p class="sr-only">{esc(sr)}</p>

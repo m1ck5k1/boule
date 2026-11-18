@@ -290,3 +290,12 @@ h1.wordmark{
 .single .tallies .tpct{ font-size:22px; }
 .single .act{ margin:22px 0 10px; }
 .single .act .hint{ display:block; margin-top:10px; }
+/* The site nav is a FOOTER (DESIGN.md §7), which is a dead end on a 28-action page.
+   A deep page needs its own way out, at the top. */
+.single .back{ margin:0 0 16px; }
+.single .back a{
+  font-size:11.5px; letter-spacing:var(--ds); text-transform:uppercase;
+  color:var(--ink-2); text-decoration:none;
+  border-bottom:1px solid var(--rule-hard); padding-bottom:2px;
+}
+.single .back a:hover{ color:var(--ink); }
