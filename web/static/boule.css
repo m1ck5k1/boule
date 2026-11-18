@@ -299,3 +299,11 @@ h1.wordmark{
   border-bottom:1px solid var(--rule-hard); padding-bottom:2px;
 }
 .single .back a:hover{ color:var(--ink); }
+
+/* ---- "also known as Boule Schit" (see DESIGN.md — the joke keeps a straight face)
+   Same lettering as everything else. No colour, no weight, never explained, and it
+   never touches the tallies or the gap. --gap stays the only colour on the page. */
+.aka{ margin:6px 0 0; font-size:11.5px; color:var(--ink-2); }
+.aka b{ color:var(--ink); }
+.masthead .aka{ grid-column:1 / -1; }
+.note .aka{ display:block; margin-top:8px; }

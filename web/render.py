@@ -109,6 +109,7 @@ def page(title: str, body: str, current_nav: str = "Today",
   visible.</b> Bills and their stages are real and come from Congress.gov. Public
   tallies are live; the official tally is not recorded yet, so no gap is shown —
   an empty tally is a fact, a zero would be a claim.
+  <span class="aka">Also known as <b>Boule Schit</b>.</span>
   <span class="legal-links"><a href="{href('/privacy')}">Privacy</a></span>
 </footer>
 </body>
@@ -365,6 +366,7 @@ def masthead(dateline_bits: list[str]) -> str:
   <div class="masthead">
     <h1 class="wordmark">Boule <span class="pron" aria-hidden="true">/ˈbuːli/</span></h1>
     <p class="tag">A second tally that runs beside the real one, so the gap becomes visible.</p>
+    <p class="aka"><b>Boule Schit</b><span class="pron" aria-hidden="true"> /ˌbuːl ˈʃɪt/</span> — (n.) 1. a council that prepared the motions; 2. what became of them.</p>
   </div>
   <div class="dateline">{tail}</div>
 </header>
