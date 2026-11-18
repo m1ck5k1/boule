@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import html
 import sqlite3
+from datetime import date
 
 STAGE_LABEL = {
     "introduced": "Introduced",
@@ -137,6 +138,17 @@ def bill_row(row: sqlite3.Row) -> str:
     </article></li>"""
 
 
+def human_date(iso: str) -> str:
+    """The design says dates are read by people, not parsed by machines:
+    'Tue 18 Nov 2026', not '2026-11-18'. The <time> attribute keeps the ISO form
+    for anything that needs to sort."""
+    try:
+        d = date.fromisoformat(iso)
+    except ValueError:
+        return iso
+    return f"{d.strftime('%a')} {d.day} {d.strftime('%b %Y')}"
+
+
 def today_page(con: sqlite3.Connection, today: str) -> str:
     rows = con.execute(
         """
@@ -155,7 +167,7 @@ def today_page(con: sqlite3.Connection, today: str) -> str:
                   '<code>python3 engine/poll.py</code>.</li>')
 
     body = masthead([
-        f"Today — <b>{esc(today)}</b>",
+        f'Today — <b><time datetime="{esc(today)}">{esc(human_date(today))}</time></b>',
         f"Bills tracked: <b>{len(rows)}</b>",
         "Vote open: <b>0</b>",
     ]) + f"""

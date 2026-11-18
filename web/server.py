@@ -68,7 +68,10 @@ class Handler(BaseHTTPRequestHandler):
         return self._send(200, target.read_bytes(), ctype)
 
     def _db(self) -> sqlite3.Connection:
-        con = sqlite3.connect(self.db_path)
+        # Read-only on purpose: the front door must never write the legislative
+        # record, and a read-only handle lets the service run under
+        # ProtectHome=read-only. Requires a non-WAL database file (no -shm needed).
+        con = sqlite3.connect(f"file:{self.db_path}?mode=ro", uri=True)
         con.row_factory = sqlite3.Row
         return con
 
