@@ -69,6 +69,13 @@ Inverted ("ink") mode swaps paper/ink; `--signal` lifts to `#E4643F` for contras
   do not align column-to-column, the gap is unreadable. This is product, not style.
 - **Mono** (`ui-monospace, "SF Mono", Menlo, monospace`) for bill identifiers and raw counts.
 - **Letterspaced caps** (`0.14em`) for labels and states — form language, not UI language.
+- **The wordmark carries a dictionary gloss.** `BOULE /ˈbuːli/` — the pronunciation of the
+  *ancient-Greek council* sense, which is the sense the project is named after. Note the
+  homographs: /buːl/ ("BOOL") is the gem/pétanque word and is **wrong** here; Modern Greek
+  is *Vouli* (βουλή). The gloss resets the wordmark's caps and letterspacing, and is
+  `aria-hidden` — IPA helps the eye, and a screen reader would read it as punctuation soup.
+- **The masthead is always two lines:** wordmark + gloss on line 1 with sign-in pushed right,
+  the tagline on line 2.
 - **No icons.** Hierarchy comes from scale, weight, and rules.
 
 ### Colour law

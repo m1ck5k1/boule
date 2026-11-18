@@ -63,16 +63,28 @@ body{
 
 /* ---- masthead: a document header, not a hero ---- */
 header.doc{ border-bottom:2px solid var(--rule-hard); }
+/* Two-line masthead, always: wordmark + pronunciation on line 1 with sign-in
+   pushed right, the tagline on line 2. It used to be a flex row that put the
+   tagline *between* the wordmark and the button on wide screens. */
 .masthead{
-  padding:14px var(--gap) 10px;
-  display:flex; align-items:baseline; gap:18px; flex-wrap:wrap;
+  display:grid; grid-template-columns:1fr auto; align-items:baseline;
+  gap:6px 18px; padding:14px var(--gap) 10px;
 }
 h1.wordmark{
   font-size:22px; font-weight:700; letter-spacing:.30em; text-transform:uppercase;
   line-height:1; margin:0;
 }
+/* the dictionary gloss. It must RESET the wordmark's caps and letterspacing —
+   otherwise the IPA inherits them and reads as more shouting, not a pronunciation.
+   aria-hidden: a screen reader would read "/ˈbuːli/" as punctuation soup, and the
+   phonetic spelling helps only the eye. The accessible name stays "Boule". */
+.wordmark .pron{
+  font-size:12px; font-weight:400; letter-spacing:0; text-transform:none;
+  color:var(--ink-2); margin-left:7px; vertical-align:2px; white-space:nowrap;
+}
 .masthead .tag{
-  font-size:11.5px; color:var(--ink-2); letter-spacing:.02em; flex:1 1 320px;
+  grid-column:1 / -1; grid-row:2;
+  font-size:11.5px; color:var(--ink-2); letter-spacing:.02em;
   line-height:1.35; margin:0;
 }
 .signin{
@@ -199,17 +211,11 @@ footer.doc{ padding:20px var(--gap) 46px; }
 }
 @media (max-width:600px){
   :root{ --gap:18px; }
-  /* masthead becomes a deterministic grid: wordmark | sign-in, tagline beneath.
-     As a wrapping flex row it overflowed and clipped the button off-screen. */
-  .masthead{
-    display:grid; grid-template-columns:1fr auto; align-items:center;
-    gap:10px 12px; padding:12px var(--gap) 10px;
-  }
-  /* explicit placement. The tagline's `1 / -1` span otherwise forces a new row
-     and pushes the sign-in button onto a third row of its own. */
-  h1.wordmark{ grid-column:1; grid-row:1; font-size:20px; letter-spacing:.26em; }
-  .signin{ grid-column:2; grid-row:1; margin:0; }
-  .masthead .tag{ grid-column:1 / -1; grid-row:2; font-size:11.5px; }
+  /* the two-line masthead is now the BASE layout; mobile only resizes it */
+  .masthead{ gap:4px 12px; padding:12px var(--gap) 10px; }
+  h1.wordmark{ font-size:20px; letter-spacing:.26em; }
+  .wordmark .pron{ font-size:11px; margin-left:5px; }
+  .masthead .tag{ font-size:11.5px; }
 
   .bill-title{ font-size:17px; }
   .bill{ gap:12px; }
@@ -234,7 +240,7 @@ footer.doc{ padding:20px var(--gap) 46px; }
 
 <header class="doc">
   <div class="masthead">
-    <h1 class="wordmark">Boule</h1>
+    <h1 class="wordmark">Boule <span class="pron" aria-hidden="true">/ˈbuːli/</span></h1>
     <p class="tag">A second tally that runs beside the real one, so the gap becomes visible.</p>
     <button class="signin">Sign in</button>
   </div>
