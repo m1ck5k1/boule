@@ -176,9 +176,20 @@ The gap is **drawn, never framed**.
   The tail *is* the difference. No box, no border, no highlight — a bordered region reads
   as a selection state, which is a lie.
 - A `Δ n points` readout in mono sits beneath, in `--signal`.
-- **Where no official vote exists, no gap is drawn.** The official track stays empty and
-  reads `—`, with the note *"No recorded vote yet — no gap to report."* A forecast is not
-  a gap, and the design must not imply one.
+- **Only a vote *of the text* may carry a gap.** A cloture motion, a motion to proceed, a
+  motion to table — these are the chamber deciding whether to *do* something, not whether it
+  agrees with the bill. Measuring the public's reading against a procedural manoeuvre would
+  claim the two *should* match, which is nonsense. Procedural votes are still **recorded and
+  shown** — the official record is not ours to hide — they simply carry no Δ.
+- **Where no vote of the text exists, no gap is drawn.** The official track stays empty and
+  reads `—`, with the note *"No recorded vote on the text yet — no gap to report."* A forecast
+  is not a gap, and the design must not imply one.
+- **A zero would be a claim.** Every tally is fetched from the source that published it
+  (the Senate's LIS XML; the House clerk's roll-call XML) and a parse that fails **raises**
+  rather than yielding `0–0`. Absence is a fact; a zero is an assertion.
+- **The vote is asked which bill it is about, and must agree.** A roll call found by date can
+  belong to a different measure — that is not hypothetical, it is how this was built. A
+  mismatch is refused, never rendered.
 
 ---
 

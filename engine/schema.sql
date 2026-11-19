@@ -144,3 +144,36 @@ CREATE TABLE IF NOT EXISTS vote_nets (
 );
 
 CREATE INDEX IF NOT EXISTS idx_vote_nets_retire ON vote_nets (retire_after);
+
+-- --- The OTHER tally ------------------------------------------------------------
+-- An official vote is a CITATION of Congress's record, not ours, so this table is
+-- not append-only in the same sense: a re-fetch that disagrees with what we stored
+-- means either the source changed or we mis-parsed, and BOTH deserve to be seen.
+-- The ingest therefore inserts idempotently and REPORTS a disagreement rather than
+-- silently overwriting it.
+--
+-- `vote_class` is the honesty column. Only 'of_the_text' may carry a gap: a cloture
+-- motion is the chamber deciding whether to proceed, and drawing a gap against it
+-- would claim the public's reading should match a procedural manoeuvre.
+CREATE TABLE IF NOT EXISTS official_tallies (
+  tally_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  congress      INTEGER NOT NULL,
+  bill_type     TEXT    NOT NULL,
+  number        INTEGER NOT NULL,
+  chamber       TEXT    NOT NULL CHECK (chamber IN ('house', 'senate')),
+  roll_call     TEXT    NOT NULL,
+  question      TEXT    NOT NULL,
+  result        TEXT,
+  vote_class    TEXT    NOT NULL CHECK (vote_class IN ('of_the_text', 'procedural', 'other')),
+  yea           INTEGER NOT NULL,
+  nay           INTEGER NOT NULL,
+  present       INTEGER NOT NULL DEFAULT 0,
+  not_voting    INTEGER NOT NULL DEFAULT 0,
+  members_recorded INTEGER NOT NULL DEFAULT 0,
+  source_url    TEXT    NOT NULL,
+  fetched_at    TEXT    NOT NULL,
+  UNIQUE (congress, bill_type, number, chamber, roll_call)
+);
+
+CREATE INDEX IF NOT EXISTS idx_official_bill
+  ON official_tallies (congress, bill_type, number, vote_class);

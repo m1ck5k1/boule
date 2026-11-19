@@ -249,23 +249,50 @@ def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: in
             counts[r[0]] = r[1]
     yea, nay = counts.get("yea", 0), counts.get("nay", 0)
     total = yea + nay
+    pct_int = round(100 * yea / total) if total else None
+    off = official_tally(con, congress, bill_type, number)
+    off_int = official_pct(off)
+
     if total:
-        pct = round(100 * yea / total)
-        public_pct, public_count = f"{pct}%", f"{yea} yea · {nay} nay"
-        sr = (f"Public tally: {yea} for, {nay} against — {total} cast, {pct}% in favour. "
-              "No official tally recorded yet, so no gap can be reported.")
+        public_pct, public_count = f"{pct_int}%", f"{yea} yea · {nay} nay"
     else:
         public_pct, public_count = "—", "—"
-        sr = "No public tally yet. No official tally recorded yet."
 
-    # The drawn bars (DESIGN.md §5). PUBLIC fills in ink on a 0-100% scale; OFFICIAL
-    # stays empty and reads "—" because no roll-call is ingested — a forecast is not
-    # a gap, and a zero would be a claim.
-    pct_int = round(100 * yea / total) if total else None
+    # The drawn bars (DESIGN.md §5). PUBLIC fills in ink; OFFICIAL in --ink-2 and carries
+    # the --signal tail that *is* the difference. A gap is drawn ONLY against a vote of
+    # the text: a procedural vote is the chamber deciding whether to proceed, and a gap
+    # against it would compare a reading of the bill with a manoeuvre. Where no such vote
+    # exists, nothing is drawn and the note says why — a forecast is not a gap.
+    if off is not None and off_int is not None and pct_int is not None:
+        lo, hi = sorted((pct_int, off_int))
+        official_html = tally_row("Official", f"{off_int}%",
+                                  f"{off['yea']} yea · {off['nay']} nay",
+                                  fill_pct=off_int, off=True, gap=(lo, hi))
+    else:
+        official_html = tally_row("Official", "—", "—", fill_pct=None)
     tallies_html = (tally_row("Public", public_pct, public_count, fill_pct=pct_int)
-                    + tally_row("Official", "—", "—", fill_pct=None))
-    gap_note = ("No recorded vote yet — no gap to report." if total
-                else "No votes yet — no gap to report.")
+                    + official_html)
+    gap_html = gap_block(
+        pct_int, off,
+        "No recorded vote on the text yet — no gap to report." if total
+        else "No votes yet — no gap to report.")
+
+    # The block above is aria-hidden, so the figures have to live in a spoken sentence.
+    if total:
+        sr = f"Public tally: {yea} for, {nay} against — {total} cast, {pct_int}% in favour."
+        if off is not None and off_int is not None:
+            d = pct_int - off_int
+            sr += (f" Official tally: {off['yea']} for, {off['nay']} against, "
+                   f"{off_int}% in favour, {off['chamber']} roll call {off['roll_call']}. "
+                   f"Gap: {abs(d)} point{'s' if abs(d) != 1 else ''} "
+                   f"{'public ahead' if d > 0 else 'official ahead' if d < 0 else 'level'}.")
+        else:
+            sr += " No recorded vote on the text yet, so no gap can be reported."
+    else:
+        sr = ("No public tally yet. "
+              + (f"Official tally on record: {off['yea']} for, {off['nay']} against."
+                 if off is not None and off_int is not None
+                 else "No official tally recorded yet."))
 
     label = f"{(bill_type or '').upper()} {number}"
     stage = stage_text(row["stage"], row["chamber"], row["current_chamber"])
@@ -308,7 +335,7 @@ def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: in
   <p class="sr-only">{esc(sr)}</p>
   <div class="tallies" aria-hidden="true">
 {tallies_html}
-    <p class="nogap">{esc(gap_note)}</p>
+    {gap_html}
   </div>
 
   <div class="act" style="text-align:left">
@@ -403,25 +430,81 @@ def masthead(dateline_bits: list[str]) -> str:
 
 
 def tally_row(label: str, pct: str, count: str, fill_pct: int | None = None,
-              off: bool = False) -> str:
+              off: bool = False, gap: tuple[int, int] | None = None) -> str:
     """One drawn tally row (DESIGN.md §5).
 
     The bar is decoration — the caller marks the block aria-hidden and carries the
     figures in a spoken sentence. `fill_pct` is the 0-100 share the bar draws to;
     None means "nothing recorded", so the track stays empty rather than showing a
     zero, which would be a claim.
+
+    `gap` is the difference, drawn: a --signal tail spanning a..b on this track.
+    The tail IS the difference — no box, no border, no highlight, because a bordered
+    region reads as a selection state, which is a lie.
     """
     inner = ""
     if fill_pct is not None:
         cls = "fill off" if off else "fill"
         inner = f'<span class="{cls}" style="--p:{fill_pct}%"></span>'
+    if gap is not None:
+        a, b = gap
+        inner += f'<span class="gapfill" style="--a:{a}%; --b:{b}%"></span>'
     return (f'<div class="trow"><span class="tlabel">{esc(label)}</span>'
             f'<span class="track">{inner}</span>'
             f'<span class="tpct">{esc(pct)}</span>'
             f'<span class="tcount">{esc(count)}</span></div>')
 
 
-def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict, base_path: str = "") -> str:
+def official_tally(con: sqlite3.Connection, congress: int, bill_type: str, number: int):
+    """The official vote a gap may be drawn against, or None.
+
+    **Only `of_the_text` qualifies.** A cloture motion or a motion to proceed is the
+    chamber deciding whether to *do* something, not whether it agrees with the bill;
+    drawing a gap against one would claim the public's reading should match a
+    procedural manoeuvre. Where no such vote exists, no gap is drawn — a forecast is
+    not a gap. Among qualifying votes, the most recent wins.
+
+    Every qualifying vote is still *recorded* and listed; this only decides which one
+    the drawn difference is measured against.
+    """
+    try:
+        return con.execute(
+            """SELECT chamber, roll_call, question, result, yea, nay, present,
+                      not_voting, source_url, vote_class
+                 FROM official_tallies
+                WHERE congress = ? AND bill_type = ? AND number = ?
+                  AND vote_class = 'of_the_text'
+                ORDER BY roll_call DESC LIMIT 1""",
+            (congress, bill_type, number)).fetchone()
+    except sqlite3.OperationalError:      # table absent on an older db
+        return None
+
+
+def official_pct(row) -> int | None:
+    """The official share in favour, or None if there is no vote to divide."""
+    if not row:
+        return None
+    y, n = int(row["yea"]), int(row["nay"])
+    return round(100 * y / (y + n)) if (y + n) else None
+
+
+def gap_block(public_pct: int | None, off, note_when_none: str) -> str:
+    """Either the Δ readout, or the honest note saying why there is no gap."""
+    off_int = official_pct(off)
+    if public_pct is None or off_int is None:
+        return f'<p class="nogap">{esc(note_when_none)}</p>'
+    d = public_pct - off_int
+    if d == 0:
+        movement = "level"
+    else:
+        movement = "public ahead" if d > 0 else "official ahead"
+    return (f'<p class="delta">&#916; {abs(d)} point{"s" if abs(d) != 1 else ""} '
+            f'{movement} · {esc(off["chamber"])} roll call {esc(str(off["roll_call"]))}'
+            f'</p>')
+
+
+def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict, base_path: str = "",
+             official=None) -> str:
     bill_type = (row["bill_type"] or "").upper()
     number = row["number"]
     title = row["title"] or "(no title)"
@@ -434,19 +517,42 @@ def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict, base_path:
     yea = int(tally.get("yea", 0))
     nay = int(tally.get("nay", 0))
     total = yea + nay
+    pct_int = round(100 * yea / total) if total else None
+    off_int = official_pct(official)
+
     if total:
-        pct = round(100 * yea / total)
-        public_pct, public_count = f"{pct}%", f"{yea} yea · {nay} nay"
-        sr = (f"Public tally: {yea} for, {nay} against — {total} cast, {pct}% in favour. "
-              "No official tally recorded yet, so no gap can be reported.")
+        public_pct, public_count = f"{pct_int}%", f"{yea} yea · {nay} nay"
     else:
         public_pct, public_count = "—", "—"
-        sr = ("No public tally yet. No official tally recorded yet. "
-              "No gap can be reported without both.")
 
-    row_tallies = (tally_row("Public", public_pct, public_count,
-                             fill_pct=(round(100 * yea / total) if total else None))
-                   + tally_row("Official", "—", "—", fill_pct=None))
+    # Same rule as the bill page: the tail is the difference, and only a vote OF THE
+    # TEXT may carry one.
+    if official is not None and off_int is not None and pct_int is not None:
+        lo, hi = sorted((pct_int, off_int))
+        official_html = tally_row("Official", f"{off_int}%",
+                                  f"{official['yea']} yea · {official['nay']} nay",
+                                  fill_pct=off_int, off=True, gap=(lo, hi))
+    else:
+        official_html = tally_row("Official", "—", "—", fill_pct=None)
+    row_tallies = (tally_row("Public", public_pct, public_count, fill_pct=pct_int)
+                   + official_html)
+
+    if total:
+        sr = f"Public tally: {yea} for, {nay} against — {total} cast, {pct_int}% in favour."
+        if official is not None and off_int is not None and pct_int is not None:
+            d = pct_int - off_int
+            sr += (f" Official: {official['yea']} for, {official['nay']} against, "
+                   f"{off_int}% in favour. Gap: {abs(d)} point"
+                   f"{'s' if abs(d) != 1 else ''} "
+                   f"{'public ahead' if d > 0 else 'official ahead' if d < 0 else 'level'}.")
+        else:
+            sr += " No recorded vote on the text yet, so no gap can be reported."
+    else:
+        sr = "No public tally yet. No gap can be reported without both tallies."
+
+    gap_html = gap_block(pct_int, official,
+                         "No recorded vote on the text yet — no gap to report." if total
+                         else "No gap can be reported without both tallies.")
 
     # S3 — the ballot box. A plain form POST, no JS: the vote is the one write,
     # and it goes to the server, which stamps it and appends it.
@@ -473,7 +579,7 @@ def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict, base_path:
       <p class="sr-only">{esc(sr)}</p>
       <div class="tallies" aria-hidden="true">
         {row_tallies}
-        <p class="nogap">No gap can be reported without both tallies.</p>
+        {gap_html}
       </div>
 
       <div class="act">
@@ -527,8 +633,25 @@ def today_page(con: sqlite3.Connection, today: str, base_path: str = "") -> str:
         return {c: counts.get((r["congress"], r["bill_type"], r["number"], vc, c), 0)
                 for c in ("yea", "nay")}
 
+    # The official tallies that MAY carry a gap: votes of the text only. A procedural
+    # vote is the chamber deciding whether to proceed, not whether it agrees, so it is
+    # recorded but never measured against. Ordered ASC so the latest overwrites.
+    official: dict = {}
+    try:
+        for o in con.execute(
+            """SELECT congress, bill_type, number, chamber, roll_call, question,
+                      yea, nay, vote_class
+                 FROM official_tallies WHERE vote_class = 'of_the_text'
+                ORDER BY roll_call ASC"""):
+            official[(o["congress"], o["bill_type"], o["number"])] = o
+    except sqlite3.OperationalError:
+        pass
+
     if rows:
-        ledger = "\n".join(bill_row(r, r["version_code"], tally_for(r), base_path) for r in rows)
+        ledger = "\n".join(
+            bill_row(r, r["version_code"], tally_for(r), base_path,
+                     official.get((r["congress"], r["bill_type"], r["number"])))
+            for r in rows)
     else:
         ledger = ('    <li class="empty">No bills ingested yet. Run '
                   '<code>python3 engine/poll.py</code>.</li>')
