@@ -159,6 +159,41 @@ Audit IDs: `AUD-YYMMDD-SUBJECT` (embedded in each audit's YAML front-matter)
 
 ---
 
+## Moments
+
+Dated markers for decisions worth remembering — usually ones where the obvious move was
+declined on purpose, so a future reader sees the reasoning and not only the result.
+
+---
+
+### 2026-11-18 — the definition was offered the masthead, and declined
+
+The masthead read:
+
+> **Boule** /ˈbuːli/
+> A second tally that runs beside the real one, so the gap becomes visible.
+> *Boule Schit* /ˌbuːl ˈʃɪt/ — (n.) 1. a council that prepared the motions; 2. what became of them.
+
+The proposal was to promote the dictionary entry — the deadpan definition — into the wordmark
+and the tagline, retiring `Boule /ˈbuːli/` and the plain-English line:
+
+> **Boule Schit** /ˌbuːl ˈʃɪt/
+> (n.) 1. a council that prepared the motions; 2. what became of them.
+
+It was written, built, deployed — and then declined, because it overruled `DESIGN.md` §1 in
+three places at once: the wordmark stays `boule`; in the product the joke is *a footnote*; and
+it is *never set apart*. That rule had been written deliberately, and the amplified register is
+the one reserved for posters, QR cards and social — not the product.
+
+**Reverted.** The wordmark is `boule`, the definition is the quietest line in the masthead, and
+the joke remains a footnote in the product.
+
+*What the decision turned on:* not that the definition reads badly — as a definition of this
+project it reads rather well — but that the product's register is **legible first**, and a name
+is not the place to make the argument. The argument is the gap.
+
+---
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

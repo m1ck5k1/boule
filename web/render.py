@@ -393,8 +393,9 @@ def masthead(dateline_bits: list[str]) -> str:
     tail = "".join(f"<span>{b}</span>" for b in dateline_bits)
     return f"""<header class="doc">
   <div class="masthead">
-    <h1 class="wordmark">Boule Schit <span class="pron" aria-hidden="true">/ˌbuːl ˈʃɪt/</span></h1>
-    <p class="tag">(n.) 1. a council that prepared the motions; 2. what became of them.</p>
+    <h1 class="wordmark">Boule <span class="pron" aria-hidden="true">/ˈbuːli/</span></h1>
+    <p class="tag">A second tally that runs beside the real one, so the gap becomes visible.</p>
+    <p class="aka"><b>Boule Schit</b><span class="pron" aria-hidden="true"> /ˌbuːl ˈʃɪt/</span> — (n.) 1. a council that prepared the motions; 2. what became of them.</p>
   </div>
   <div class="dateline">{tail}</div>
 </header>
