@@ -1,0 +1,40 @@
+[
+  {
+    "bill_id": "119hr4502",
+    "score": 5,
+    "reason": "Title alone ('Silver Shield Act') signals potential precious-metals market manipulation or exemption carve-out. Without summary, fiscal kernel unknown, but naming pattern matches regulatory capture playbook (cf. SILVER Act precedent). Requires immediate full text audit.",
+    "vectors": [
+      "Regulatory capture: potential commodity exemption or safe harbor",
+      "Market-access exploit: possible vault/storage mandate or strategic reserve language",
+      "Fiscal bleed: strategic commodity purchase authority or price-floor mechanism",
+      "Lobbyist ROI: precious metals industry positioning"
+    ],
+    "title": "Silver Shield Act of 2025",
+    "url": "https://www.congress.gov/bill/119th-congress/hr-bill/4502"
+  },
+  {
+    "bill_id": "119s5760",
+    "score": 4,
+    "reason": "Regulatory carve-out for reverse mortgage originators\u2014relaxes restrictions on financial/insurance bundling, creating operational leverage for lenders. Classic capture pattern: narrow exemption language disguised as technical clarification. High likelihood of hidden market-access expansion.",
+    "vectors": [
+      "regulatory_capture: exemption for reverse mortgage actors from baseline restrictions",
+      "market_access_exploit: bundling financial/insurance products with mortgage origination",
+      "senior_targeting: reverse mortgages disproportionately affect elderly populations with limited recourse",
+      "opacity_signal: 'for other purposes' language suggests rider payload"
+    ],
+    "title": "A bill to modify the prohibition on reverse mortgage originators from engaging with financial or insurance activities, and for other purposes.",
+    "url": "https://www.congress.gov/bill/119th-congress/s-bill/5760"
+  },
+  {
+    "bill_id": "119s927",
+    "score": 4,
+    "reason": "Title signals Medicaid regulatory carve-out for pharmacy sector\u2014classic capture vector. Likely contains reimbursement floor, audit exemptions, or prior-auth safe harbor that protects specific pharmacy operators at state/federal cost.",
+    "vectors": [
+      "Regulatory capture: pharmacy exemptions from Medicaid rate controls",
+      "Fiscal bleed: potential reimbursement mandate inflation via carve-out",
+      "Entitlement erosion: Medicaid budget pressure redirected to other beneficiary services"
+    ],
+    "title": "Protecting Pharmacies in Medicaid Act",
+    "url": "https://www.congress.gov/bill/119th-congress/s-bill/927"
+  }
+]

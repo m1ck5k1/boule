@@ -3,6 +3,7 @@
 **Source:** https://www.congress.gov/119/bills/hr4502/BILLS-119hr4502ih.xml
 
 ## Version History
+| `introduced.xml` | introduced | 261119 | Auto-ingested |
 | File | Version | Date | Notes |
 |---|---|---|---|
 | `introduced.xml` | introduced | 260804 | Auto-ingested |
