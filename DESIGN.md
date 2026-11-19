@@ -15,22 +15,34 @@ If yes, the design is inside the system. If no, it has drifted back toward the b
 
 ### The naming rule — the joke keeps a straight face
 
-> **Boule is also known as Boule Schit. It is never explained, never coloured, never set apart.**
+> **Boule Schit is the masthead. It is never explained, never coloured, never winked at.**
 
 - **British irony is structural, not announced.** The words are laid out in the same
   register as everything else, and the page never acknowledges them. A joke that is
   labelled, or set in a different typeface, or winked at, is not British — it is a novelty.
-- **Two placements, both in the flattest spot available.** The dictionary entry in the
-  masthead (*Boule Schit /ˌbuːl ˈʃɪt/ — (n.) 1. a council that prepared the motions;
-  2. what became of them.*) and the *also known as* line in the footer small print.
+- **Two placements, and no more.** The masthead — wordmark *Boule Schit /ˌbuːl ˈʃɪt/*, with
+  the dictionary entry beneath it (*(n.) 1. a council that prepared the motions; 2. what
+  became of them.*) as the tag — and the *also known as* line in the footer small print.
   Nowhere else.
 - **It never touches the numbers.** Not the vote button, not the tallies, not the gap.
   Decorating the legible register is how civic-tech funk fails. The joke lives *around*
   the data, never on it.
-- **The name does not change.** Repo, URL and wordmark stay `boule` — this is what the
+- **The name does not change.** Repo, URL and `<title>` stay `boule` — this is what the
   trade calls it, not what it is registered as.
-- **The LOUD register may shout it.** On a poster, a QR card or social it may be the
-  headline, larger than the wordmark. In the product it is a footnote.
+- **The LOUD register may shout it, and now does.** On a poster, a QR card or social it may
+  be the headline, larger than the wordmark. It is also the wordmark itself.
+
+**Changed 2026-11-18 — the definition was promoted, deliberately.** The masthead read
+`Boule /ˈbuːli/` with the product line beneath it (*A second tally that runs beside the real
+one, so the gap becomes visible.*) and the dictionary entry as a third, quieter line. Now the
+definition *is* the wordmark and the tag. Three things this overrules, recorded so the doc
+matches the page: the wordmark no longer stays `boule` on the landing page; the joke is no
+longer "a footnote" in the product; and it is no longer the flattest spot available.
+
+**Nothing was lost.** The deadpan definition does the work the product line did — a *boule* is
+a council that prepared the motions, and what became of them is the gap — and the plain-English
+line already appeared in the footer, in bold, where it still does. The `<title>`, the repo and
+the URL remain `boule`.
 
 ---
 
