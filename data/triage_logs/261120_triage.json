@@ -1,0 +1,27 @@
+[
+  {
+    "bill_id": "119hr8007",
+    "score": 5,
+    "reason": "SILVER Act (H.R.8007) is a canonical Prowler case study: vault-mandate language wrapped in systemic-risk framing creates forced market access for positioned financial actors while obscuring fiscal transfer mechanisms.",
+    "vectors": [
+      "market-access exploit",
+      "regulatory capture via systemic-risk language",
+      "forced vault mandates creating captive demand",
+      "fiscal bleed through shadow banking vectors"
+    ],
+    "title": "SILVER Act",
+    "url": "https://www.congress.gov/bill/119th-congress/hr-bill/8007"
+  },
+  {
+    "bill_id": "119s5787",
+    "score": 4,
+    "reason": "Regulatory carve-out redefining institutional coverage thresholds under Medicaid mental health services. Classic capture signal: narrow bed-count exemption (17-32) creates loophole for specific facility operators to escape coverage mandates or compliance costs while appearing to expand access.",
+    "vectors": [
+      "Regulatory capture: bed-count exemption creates safe harbor for positioned providers",
+      "Entitlement erosion: Medicaid mental health coverage contraction disguised as definitional revision",
+      "Market-access exploit: carve-out likely benefits private psychiatric operators over public systems"
+    ],
+    "title": "A bill to amend title XIX of the Social Security Act to revise the definition of institution for mental diseases under the Medicaid program to exclude institutions of 17 to 32 beds that meet certain standards.",
+    "url": "https://www.congress.gov/bill/119th-congress/s-bill/5787"
+  }
+]
