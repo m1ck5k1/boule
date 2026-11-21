@@ -1,0 +1,81 @@
+[
+  {
+    "bill_id": "119hr7147",
+    "score": 5,
+    "reason": "Continuing appropriations bill with DHS scope\u2014classic vector for fiscal bleed via emergency supplemental mechanics, potential regulatory capture in border/security contracting carve-outs, and hidden entitlement or program riders. No summary provided amplifies risk (opacity is exploit signal). Requires immediate kernel audit.",
+    "vectors": [
+      "Fiscal bleed: continuing appropriations with debt-limit or TGA flow manipulation potential",
+      "Defense/DHS smokescreen: emergency-framed appropriations obscuring non-security payload",
+      "Regulatory capture: DHS contract exemptions or sole-source carve-outs",
+      "Opacity signal: summary absent\u2014suggests rider-heavy drafting"
+    ],
+    "title": "Homeland Security and Further Additional Continuing Appropriations Act, 2026.",
+    "url": "https://www.congress.gov/bill/119th-congress/hr-bill/7147"
+  },
+  {
+    "bill_id": "119hr7148",
+    "score": 5,
+    "reason": "Omnibus appropriations act with maximal opacity surface\u2014likely contains regulatory capture riders, defense supplemental smokescreens, entitlement erosion language buried in reconciliation mechanics, and fiscal-damage vectors across multiple TGA flows. Requires immediate kernel audit of rider text.",
+    "vectors": [
+      "Fiscal bleed: omnibus deficits and debt-limit gaming mechanics",
+      "Regulatory capture: anticipated carve-outs and exemptions in rider language",
+      "Defense/DHS smokescreens: emergency supplements and supplemental classifications",
+      "Entitlement erosion: Medicaid, SNAP, Social Security cuts in reconciliation riders",
+      "Market-access exploits: carve-outs for positioned private actors"
+    ],
+    "title": "Consolidated Appropriations Act, 2026",
+    "url": "https://www.congress.gov/bill/119th-congress/hr-bill/7148"
+  },
+  {
+    "bill_id": "119hr8007",
+    "score": 5,
+    "reason": "SILVER Act (H.R.8007) is a canonical Prowler case study: vault-mandate language disguised as systemic risk mitigation creates forced market access for positioned financial actors. Classic regulatory capture wrapped in stability rhetoric.",
+    "vectors": [
+      "market_access_exploit",
+      "regulatory_capture",
+      "systemic_risk_language_as_cover"
+    ],
+    "title": "SILVER Act",
+    "url": "https://www.congress.gov/bill/119th-congress/hr-bill/8007"
+  },
+  {
+    "bill_id": "119s1794",
+    "score": 5,
+    "reason": "SNAP retrenchment bill\u2014classic entitlement erosion vector. 'Next Step' framing typically masks benefit reduction, work requirement escalation, or eligibility narrowing. Requires immediate kernel audit to identify fiscal damage magnitude and demographic targeting.",
+    "vectors": [
+      "entitlement_erosion",
+      "regulatory_capture_via_work_requirements",
+      "fiscal_bleed_to_states",
+      "means_testing_expansion",
+      "geographic_targeting_via_eligibility_tightening"
+    ],
+    "title": "SNAP Next Step Act of 2025",
+    "url": "https://www.congress.gov/bill/119th-congress/s-bill/1794"
+  },
+  {
+    "bill_id": "119hr6031",
+    "score": 4,
+    "reason": "Medicare Advantage (MA) is a $300B+ private insurance channel within Medicare with known regulatory arbitrage vectors (risk-score manipulation, prior-auth gatekeeping, medical loss ratio exemptions). Title language ('Integrity') signals either genuine audit mechanism OR regulatory capture reframing. Requires kernel inspection to distinguish.",
+    "vectors": [
+      "regulatory_capture: MA insurers lobby for narrow 'integrity' definitions that exclude profitable denial patterns",
+      "fiscal_bleed: potential expansion of CMS audit carve-outs or safe harbors for MA plans",
+      "market_access: possible mandate expansion forcing traditional Medicare beneficiaries into MA plans",
+      "entitlement_erosion: MA benefit restrictions disguised as 'integrity' measures"
+    ],
+    "title": "Medicare Advantage Integrity Act of 2025",
+    "url": "https://www.congress.gov/bill/119th-congress/hr-bill/6031"
+  },
+  {
+    "bill_id": "119s5787",
+    "score": 4,
+    "reason": "Regulatory capture via definitional carve-out. Redefining IMD thresholds creates safe harbor for mid-sized psychiatric facilities, likely positioning specific operators for favorable Medicaid reimbursement while fragmenting care continuity and obscuring federal cost exposure.",
+    "vectors": [
+      "Regulatory capture: IMD exclusion exempts 17-32 bed facilities from federal oversight standards",
+      "Fiscal bleed: Redefining institution class redistributes Medicaid flows to uncapped state/provider tier",
+      "Market-access exploit: Threshold manipulation favors positioned operators over larger regulated competitors",
+      "Entitlement erosion: Fragmentation may reduce per-patient service intensity while maintaining or increasing aggregate spend"
+    ],
+    "title": "A bill to amend title XIX of the Social Security Act to revise the definition of institution for mental diseases under the Medicaid program to exclude institutions of 17 to 32 beds that meet certain standards.",
+    "url": "https://www.congress.gov/bill/119th-congress/s-bill/5787"
+  }
+]
