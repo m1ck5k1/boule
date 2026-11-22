@@ -1,0 +1,29 @@
+[
+  {
+    "bill_id": "119hr7147",
+    "score": 5,
+    "reason": "Continuing appropriation vehicle with 'Further Additional' escalation language signals potential fiscal bleed mechanism and DHS supplemental smokescreen. Absent summary is red flag\u2014suggests obfuscated payload.",
+    "vectors": [
+      "Defense/DHS smokescreen: emergency-style CR language masks fiscal damage",
+      "Fiscal bleed: 'Further Additional' suggests deficit expansion beyond standard baseline",
+      "CR mechanics exploit: continuing appropriations used to bypass normal authorization review",
+      "Missing summary indicates potential regulatory capture or carve-out buried in full text"
+    ],
+    "title": "Homeland Security and Further Additional Continuing Appropriations Act, 2026.",
+    "url": "https://www.congress.gov/bill/119th-congress/hr-bill/7147"
+  },
+  {
+    "bill_id": "119hr7148",
+    "score": 5,
+    "reason": "Omnibus appropriations act represents peak fiscal opacity: typical vector for entitlement erosion riders, defense supplemental obfuscation, and regulatory carve-outs buried in thousand-page text. Zero summary provided signals intentional triage avoidance.",
+    "vectors": [
+      "Fiscal bleed via omnibus structure",
+      "Entitlement erosion hidden in riders",
+      "Defense/DHS smokescreen potential",
+      "Regulatory capture via appropriations language",
+      "Debt-limit gaming mechanics"
+    ],
+    "title": "Consolidated Appropriations Act, 2026",
+    "url": "https://www.congress.gov/bill/119th-congress/hr-bill/7148"
+  }
+]
