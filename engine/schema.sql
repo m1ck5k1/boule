@@ -126,6 +126,46 @@ BEGIN SELECT RAISE(ABORT, 'votes is append-only: UPDATE refused'); END;
 CREATE TRIGGER IF NOT EXISTS votes_no_delete BEFORE DELETE ON votes
 BEGIN SELECT RAISE(ABORT, 'votes is append-only: DELETE refused'); END;
 
+-- S5 — the device key, and the identity mechanism the project actually uses.
+--
+-- There is no identity provider and no account: a key is issued once, and the
+-- reading is bound to the DEVICE rather than to a person. The server stores only
+-- the key's hash, so it can recognise a device and still be unable to resolve one.
+--
+-- `device_id` is an opaque random id, and it is what a vote points at -- not the
+-- hash of the secret. So a `device_id` that leaks into the published data cannot
+-- be replayed to vote: it is an address, not a credential.
+CREATE TABLE IF NOT EXISTS devices (
+  device_id    TEXT PRIMARY KEY,        -- opaque; what a reading points at
+  key_hash     TEXT NOT NULL UNIQUE,    -- sha256(device key); the raw key is never stored
+  issued_at    TEXT NOT NULL,
+  last_seen_at TEXT,
+  retired_at   TEXT                     -- retirement never touches the votes
+);
+
+-- One reading per device, per VERSION of the text — enforced by the database, for
+-- the same reason as every other rule here: a convention is what gets broken at 2am.
+--
+-- PARTIAL on purpose (WHERE voter_key IS NOT NULL). An unkeyed reading is anonymous,
+-- and Boule cannot deduplicate what it cannot identify — so anonymous readings stay
+-- repeatable, and S3's "changing a vote appends a row" survives S5 intact. This is
+-- the whole design: the limit is a claim about DEVICES, and it must not silently
+-- become a claim about people.
+CREATE UNIQUE INDEX IF NOT EXISTS ux_votes_device_version
+  ON votes (congress, bill_type, number, version_code, voter_key)
+  WHERE voter_key IS NOT NULL;
+
+-- `provenance` is not a label anyone may write freely: it must AGREE with voter_key.
+-- 'device' means a key was presented; 'anonymous' means none was. A CHECK cannot be
+-- added to an existing table in SQLite, and the append-only triggers forbid
+-- rebuilding it in place -- so this is a trigger: same enforcement, no rebuild.
+CREATE TRIGGER IF NOT EXISTS votes_provenance_coherent BEFORE INSERT ON votes
+WHEN (NEW.provenance = 'device' AND NEW.voter_key IS NULL)
+  OR (NEW.provenance = 'anonymous' AND NEW.voter_key IS NOT NULL)
+BEGIN
+  SELECT RAISE(ABORT, 'votes.provenance must agree with voter_key');
+END;
+
 -- --- Anything with a lifetime lives OUTSIDE the append-only table ---------------
 -- `votes` refuses UPDATE and DELETE by trigger, which is exactly what makes it
 -- trustworthy -- and it also means nothing inside it can expire: a purge against it

@@ -99,8 +99,8 @@ pass/fail test, not a demo. No stage starts until the previous gate passes.
 | **S2** | front page renders from the DB, not from HTML | edit a DB row → the page changes **without touching HTML** | ✅ **done — gate passed** |
 | **S3** | ballot box: append-only `votes`, `POST /api/vote`, server-side stamp, keyed `(bill, version)`, two-step confirm | changing a vote **adds a row and never mutates the old one**; no `UPDATE`/`DELETE` can run (DB trigger) | ✅ **done** — `engine/gate_s3.py` |
 | **S3.5** | the **Bill page** — a real `/bill/{congress}/{type}/{number}` route (the first dynamic route) | server and static are byte-identical for a bill page; the stage matches the DB; zero JS | ✅ **done** — TWIN gate 5/5 |
-| **S4** | gap computed from public ⨯ official | the gap equals `public% − official%` on a known bill; a bill with **no** official vote renders `—`, never `0` | ⬜ |
-| **S5** | the ballot box becomes **device-scoped**: a key is issued at install and refused a second reading on the same `(bill, version)` | the same device key **cannot** record two readings on one `(bill, version)`; `provenance` reads `device` vs `anonymous` | ⬜ **promoted — see ordering below** |
+| **S4** | gap computed from public ⨯ official | the gap equals `public% − official%` on a known bill; a bill with **no** official vote renders `—`, never `0` | ✅ **done 19 Nov** — `f6b8988`, live, Δ 28 on HR 2347 |
+| **S5** | the ballot box becomes **device-scoped**: a key is issued at install and refused a second reading on the same `(bill, version)` | the same device key **cannot** record two readings on one `(bill, version)`; `provenance` reads `device` vs `anonymous` | ✅ **done 19 Nov** — `gate_s5.py` 10/10 and `gate_s5_http.py` 10/10; the refusal is a 409 page, not an error |
 | **S6** | **installable PWA** (manifest, service worker, icons) | "Add to Home Screen" installs, and the app holds a key the server honours | ⬜ **load-bearing — the install *is* the identity mechanism** |
 | **S7** | **the published ledger** — `/data`, the audit pack, the aggregates (`DATA.md`) | `engine/gate_publish.py` passes, and the published tally recomputes to the same number the page shows | ⬜ |
 | **S8** | public deploy (VPS + domain) *(was S7)* | first non-tailnet visitor can read and vote | ⬜ |
@@ -254,3 +254,4 @@ decentralised DNS · the LOUD/marketing register · native apps.
 | Date | Change |
 |---|---|
 | 2026-11-17 | Roadmap opened. Accessibility added as a standing requirement, with its current state recorded honestly rather than assumed. |
+| 2026-11-19 | **S4 closed** (Δ 28 on HR 2347). **S5 built and gated**: a device key is issued at `/api/device` and set as an HttpOnly/Secure/SameSite cookie, one reading per device per version is refused by a **partial UNIQUE index** (not by a code check, so there is no window to race), and `provenance` is forced to agree with `voter_key` by trigger. Anonymous readings stay repeatable — the limit is a claim about *devices*, and must not silently become one about people. |
