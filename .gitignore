@@ -22,3 +22,8 @@ dist2/
 *.swp
 *.swo
 .*.swp
+
+# Generated artefacts — the generators are the source of truth, not the outputs.
+design/render-*.png
+marketing/boule-qr-*.png
+marketing/boule-qr-*.svg

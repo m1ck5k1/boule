@@ -1,0 +1,23 @@
+name: gates
+
+# The stage ladder's gates, run on every push. A gate that never runs is not a gate.
+# These four are stdlib-only and need no database, so they cost nothing.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: S3 — the ballot box is append-only
+        run: python3 engine/gate_s3.py
+      - name: S5 — one reading per device, per version (the store)
+        run: python3 engine/gate_s5.py
+      - name: S5 — the same claim over HTTP (the real path)
+        run: python3 engine/gate_s5_http.py

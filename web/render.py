@@ -168,6 +168,30 @@ def confirm_vote(bill_label: str, title: str, choice: str, hidden: str,
     return page("Boule — confirm your vote", body, "", base_path)
 
 
+def one_reading_page(bill_label: str, title: str, base_path: str = "") -> str:
+    """S5 — the refusal, said plainly.
+
+    This is not an error and must not be dressed as one. The reading was already
+    recorded, the record stands, and nothing is lost. A refusal that reads like a
+    fault teaches the user the system is broken, when what actually happened is
+    that it counted honestly.
+    """
+    body = f"""
+<main id="main">
+  <section class="confirm" aria-labelledby="r-h">
+    <h1 id="r-h" class="confirm-h">Already recorded</h1>
+    <p class="cbill"><b>{esc(bill_label)}</b> <span class="cs">{esc(title)}</span></p>
+    <p class="cchoice">This device has already recorded a reading on <b>this version</b> of
+      the text. One reading per device is what makes the tally a count of <em>devices</em>
+      rather than a count of clicks — so the earlier reading stands, and this one was not
+      added.</p>
+    <p><a class="cancel" href="{esc(base_path)}/">Back to the ledger</a></p>
+  </section>
+</main>
+"""
+    return page("Boule — already recorded", body, "", base_path)
+
+
 CONGRESS_SLUG = {
     "hr": "house-bill", "s": "senate-bill",
     "hjres": "house-joint-resolution", "sjres": "senate-joint-resolution",
