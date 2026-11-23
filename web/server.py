@@ -143,7 +143,13 @@ class Handler(BaseHTTPRequestHandler):
         return row["device_id"]
 
     def _issue_device(self) -> None:
-        """Issue a key and hand it to the device in a cookie.
+        """Issue a key — or confirm the one this device already has.
+
+        IDEMPOTENT on purpose. The worker calls this at install and the page calls it on
+        load, and neither can read an HttpOnly cookie to find out whether it already
+        holds a key. So the server answers that question instead: present a valid key and
+        it is returned unchanged; present nothing and one is issued. A reinstall
+        therefore neither forks the identity nor adds a row.
 
         The raw key exists in exactly one place after this returns: the client. The
         database keeps a hash, so a dump of the database cannot be replayed to vote.
@@ -152,6 +158,16 @@ class Handler(BaseHTTPRequestHandler):
         not carry the cookie, so a forged submission can only ever record an
         ANONYMOUS reading — it cannot burn this device's one reading on a version.
         """
+        presented = self._cookie(DEVICE_COOKIE)
+        if presented:
+            con = self._db()
+            try:
+                if self._device_id_for(con, presented) is not None:
+                    return self._send(200, json.dumps({"issued": False}),
+                                      "application/json; charset=utf-8")
+            finally:
+                con.close()
+
         key = secrets.token_urlsafe(32)
         device_id = secrets.token_hex(16)
         now = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -182,6 +198,13 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/health":
             return self._send(200, "ok", "text/plain; charset=utf-8", head_only=head_only)
+
+        # The service worker must be served from the ROOT to control the whole origin,
+        # because a worker's default scope is its own directory -- which is why this one
+        # file is not under /static/ like everything else.
+        if path == "/sw.js":
+            return self._send(200, (STATIC / "sw.js").read_bytes(),
+                              "text/javascript; charset=utf-8", head_only=head_only)
 
         if path.startswith("/static/"):
             return self._static(path)

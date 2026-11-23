@@ -21,3 +21,5 @@ jobs:
         run: python3 engine/gate_s5.py
       - name: S5 — the same claim over HTTP (the real path)
         run: python3 engine/gate_s5_http.py
+      - name: S6 — the installable PWA (everything the install depends on)
+        run: python3 engine/gate_s6.py
