@@ -103,7 +103,13 @@ class Handler(BaseHTTPRequestHandler):
     def _db(self) -> sqlite3.Connection:
         # Read-only on purpose: the front door must never write the legislative
         # record, and a read-only handle lets the service run under
-        # ProtectHome=read-only. Requires a non-WAL database file (no -shm needed).
+        # ProtectHome=read-only.
+        #
+        # CORRECTION: the file IS in WAL mode. An earlier note here claimed it had
+        # to be non-WAL to avoid needing the -shm file. That was wrong -- this
+        # connection has read a WAL database happily since S3, verified against the
+        # live file on mbp9. Kept rather than deleted, because the wrong version was
+        # load-bearing for a while and future-selves should see it corrected.
         con = sqlite3.connect(f"file:{self.db_path}?mode=ro", uri=True)
         con.row_factory = sqlite3.Row
         return con
