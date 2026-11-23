@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Boule">
+  <title>Boule — two tallies and the gap between them</title>
+  <!-- paper ground -->
+  <rect width="512" height="512" fill="#FAF9F6"/>
+  <!-- the official tally: the taller rule -->
+  <rect x="104" y="150" width="72" height="214" fill="#14130F"/>
+  <!-- our tally: shorter, and that is the whole point -->
+  <rect x="336" y="214" width="72" height="150" fill="#14130F"/>
+  <!-- the gap, marked: signal rule spanning the difference between the two tops -->
+  <rect x="104" y="150" width="304" height="10" fill="#C8442A"/>
+  <!-- the baseline both tallies stand on -->
+  <rect x="104" y="392" width="304" height="10" fill="#14130F"/>
+</svg>

@@ -97,6 +97,13 @@ def page(title: str, body: str, current_nav: str = "Today",
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{esc(title)}</title>
 <link rel="stylesheet" href="{href('/static/boule.css')}">
+<!-- S6 — the installable PWA. The design rule is "no icons"; a LAUNCHER icon is not a
+     UI icon, it is the one place a name is all that fits. The manifest is what makes the
+     app installable, and the install is what makes a device key durable. -->
+<meta name="theme-color" content="#14130F">
+<link rel="icon" href="{href('/static/icon.svg')}" type="image/svg+xml">
+<link rel="apple-touch-icon" href="{href('/static/icon-180.png')}">
+<link rel="manifest" href="{href('/static/manifest.webmanifest')}">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -112,6 +119,11 @@ def page(title: str, body: str, current_nav: str = "Today",
   <span class="aka">Also known as <b>Boule Schit</b>.</span>
   <span class="legal-links"><a href="{href('/privacy')}">Privacy</a></span>
 </footer>
+<!-- The only script in the project. A service worker cannot be registered without one,
+     and without a worker there is no install — so this is the deliberate, recorded
+     exception to "no JavaScript", not the thin end of a framework. It registers the
+     worker and asks for the device key; nothing else. -->
+<script src="{href('/static/pwa.js')}" defer></script>
 </body>
 </html>
 """
