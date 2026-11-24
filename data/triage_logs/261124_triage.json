@@ -1,0 +1,15 @@
+[
+  {
+    "bill_id": "119s1023",
+    "score": 4,
+    "reason": "Title signals entitlement erosion lens\u2014'overpayment relief' typically reframes debt collection against beneficiaries as fiscal hygiene. Without summary, the kernel likely contains waiver provisions, statute-of-limitations resets, or asset-recovery acceleration that shifts SSA collection burden onto claimants, particularly those least able to contest.",
+    "vectors": [
+      "entitlement_erosion_mechanism",
+      "beneficiary_liability_shift",
+      "debt_collection_acceleration",
+      "regulatory_capture_SSA_process"
+    ],
+    "title": "Social Security Overpayment Relief Act",
+    "url": "https://www.congress.gov/bill/119th-congress/s-bill/1023"
+  }
+]
