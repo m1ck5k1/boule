@@ -217,3 +217,28 @@ CREATE TABLE IF NOT EXISTS official_tallies (
 
 CREATE INDEX IF NOT EXISTS idx_official_bill
   ON official_tallies (congress, bill_type, number, vote_class);
+
+-- L1 of the reading stack: the CRS summary. The government's own text, stored VERBATIM
+-- with its attribution — Boule does not write this layer, and an AI summary of a bill is
+-- the same category of artefact this project exists to audit.
+--
+-- Keyed to the VERSION it describes, not to the bill. A summary is not a property of a
+-- bill; it is a property of a (bill, version) pair. Congress.gov has a summary for only
+-- some versions, so the honest state "no summary exists for the version being voted on"
+-- is a normal outcome the UI must be able to say out loud — the same rule as a gap that
+-- renders `—` and never `0`.
+CREATE TABLE IF NOT EXISTS bill_summaries (
+  summary_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+  congress     INTEGER NOT NULL,
+  bill_type    TEXT    NOT NULL,
+  number       INTEGER NOT NULL,
+  version_code TEXT    NOT NULL,          -- congress.gov versionCode, e.g. '07'
+  action_desc  TEXT,                      -- congress.gov actionDesc, e.g. 'Reported to House'
+  text         TEXT    NOT NULL,          -- CRS's words, verbatim. Never edited, never condensed.
+  source_url   TEXT    NOT NULL,
+  fetched_at   TEXT    NOT NULL,
+  UNIQUE (congress, bill_type, number, version_code, text)
+);
+
+CREATE INDEX IF NOT EXISTS idx_summaries_bill
+  ON bill_summaries (congress, bill_type, number, version_code);

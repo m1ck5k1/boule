@@ -277,6 +277,13 @@ h1.wordmark{
 .layer .lsrc{ font-size:10px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2); }
 .layer .lbody{ margin:0; font-size:13.5px; line-height:1.55; }
 .notwired{ color:var(--ink-2); font-style:italic; }
+/* L1 — CRS's words. The attribution is not decoration: the layer is the government's, and
+   the page must never let a reader mistake it for ours. */
+.lattr{ margin:0 0 8px; font-size:10px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2); }
+.lattr a{ color:var(--ink-2); }
+.crs{ font-size:13.5px; line-height:1.55; }
+.crs p{ margin:0 0 8px; }
+.crs p:last-child{ margin-bottom:0; }
 .hint{ font-size:11px; color:var(--ink-2); letter-spacing:var(--ds); text-transform:uppercase; }
 .atl{ list-style:none; margin:0; padding:0; }
 .arow{

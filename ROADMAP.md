@@ -102,8 +102,8 @@ activity (`sort=updateDate desc` + a look-back window). Nothing supplies future 
 | Bills that recently moved | Congress.gov `/bill/{congress}?sort=updateDate desc` | ✅ live (existing poller) |
 | Stage history + roll calls | Congress.gov `/bill/.../actions` | ⛔ not wired |
 | **Future committee dates** | Congress.gov `/committee-meeting/{congress}/{chamber}` | ⛔ **not wired — required for Schedule** |
-| Future floor dates | House/Senate leadership schedules — **not in the API** | ⛔ not available |
-| **CRS summary (L1)** | Congress.gov `/bill/.../summaries` | ⛔ **not wired — required for the Bill page** |
+| Future floor dates | House/Senate leadership schedules — **not in the API** | ⛔ not ingested — **but the data IS published** (corrected 24 Nov): the House weekly floor schedule is machine-readable XML at `docs.house.gov/floor/Download.aspx?file=/billsthisweek/YYYYMMDD/YYYYMMDD.xml` (verified: `congress-num="119"`, 16,595 bytes for the week of 16 Nov 2026), with an RSS feed at `docs.house.gov/BillsThisWeek-RSS.xml`. It is simply not in Congress.gov — so "not available" was wrong, and this is the feed the Schedule surface actually needs. The Senate's equivalent is not yet located. |
+| **CRS summary (L1)** | Congress.gov `/bill/.../summaries` | ✅ **live 24 Nov** — `engine/summaries.py`, pinned to the version, stored verbatim, `gate_summaries.py` 13/13. Of 12 tracked bills only **3** have a summary at all, and HR 2347's is version 07 while its readings are pinned to 00, so its L1 correctly renders *"no CRS summary exists for v00 … congress.gov has one for version 07, which is a different text"*. |
 | Bill full text (L3) | Congress.gov bill XML — `tools/ingest_bill.sh` | ✅ exists, not wired to the UI |
 | Version diff (L2) | `tools/diff_bills.sh` | ✅ exists, not wired to the UI |
 

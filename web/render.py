@@ -16,8 +16,16 @@ import html
 import math
 import re
 import sqlite3
+import sys
 from datetime import date
 from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+# The whitelist sanitiser lives in engine/ with no imports of its own, so the web tier can
+# use it without pulling the Congress.gov client (and its dotenv loading) into the server.
+sys.path.insert(0, str(HERE.parent / "engine"))
+
+import sanitize  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 LEGAL = ROOT / "legal"
@@ -276,6 +284,28 @@ def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: in
         "ORDER BY first_seen DESC, version_id DESC LIMIT 1",
         (congress, bill_type, number)).fetchone()
 
+    # L1 — the CRS summary, pinned to the version being voted on. `other` is a summary that
+    # exists for a DIFFERENT version: named so the reader knows the layer is not simply
+    # missing, and never shown, because its words describe other text.
+    summary = other_summary = None
+    version_label = (f"v{version['version_code']} ({version['label']})"
+                     if version else None)
+    try:
+        if version:
+            summary = con.execute(
+                "SELECT version_code, action_desc, text, source_url FROM bill_summaries "
+                "WHERE congress = ? AND bill_type = ? AND number = ? AND version_code = ? "
+                "ORDER BY summary_id DESC LIMIT 1",
+                (congress, bill_type, number, version["version_code"])).fetchone()
+        if summary is None:
+            other_summary = con.execute(
+                "SELECT version_code, action_desc FROM bill_summaries "
+                "WHERE congress = ? AND bill_type = ? AND number = ? "
+                "ORDER BY summary_id DESC LIMIT 1",
+                (congress, bill_type, number)).fetchone()
+    except sqlite3.OperationalError:      # table absent on an older db
+        pass
+
     counts: dict = {}
     if version:
         for r in con.execute(
@@ -374,6 +404,7 @@ def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: in
         f'<span class="atype">{esc(a[1] or "")}</span>'
         f'<span class="atext">{esc(a[2])}</span></li>'
         for a in actions) or '        <li class="arow"><span class="atext">No actions recorded.</span></li>'
+    l1 = l1_html(summary, other_summary, version_label)
 
     introduced = human_date(row["introduced_on"]) if row["introduced_on"] else "date unknown"
     ver_line = (f"Version pinned: <b>{esc(version['version_code'])} · {esc(version['label'])}</b>"
@@ -400,11 +431,12 @@ def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: in
   <h2 class="sect-h">The reading stack — none of it ours</h2>
   <div class="layer">
     <div class="lh"><span class="ltag">L0 — one line</span><span class="lsrc">condensed from CRS</span></div>
-    <p class="lbody notwired">Not wired yet — needs the CRS summary feed.</p>
+    <p class="lbody notwired">Not wired — and not for want of a feed. A one-line condensation
+      is Boule-authored prose, so it needs an editorial decision, not a machine writer.</p>
   </div>
   <div class="layer">
     <div class="lh"><span class="ltag">L1 — official summary</span><span class="lsrc">source: CRS</span></div>
-    <p class="lbody notwired">Not wired yet. Boule does not write this layer.</p>
+    {l1}
   </div>
   <div class="layer">
     <div class="lh"><span class="ltag">L2 — what changed</span><span class="lsrc">source: diff_bills.sh</span></div>
@@ -594,6 +626,39 @@ def gap_block(public_pct: int | None, off, note_when_none: str, *,
     # than the claim -- and so a test can prove they are still there.
     return (f'<p class="delta">{claim}'
             f'<span class="cond"> · {" · ".join(bits)}</span></p>')
+
+
+def l1_html(summary, other, version_label: str | None) -> str:
+    """L1 — the CRS summary, VERBATIM, pinned to the version being voted on.
+
+    Three cases, and the difference between them is the whole point:
+
+      * a summary for THIS version  -> CRS's words, attributed, with its version named;
+      * no summary for this version, but one exists for a DIFFERENT text -> say so, and do
+        NOT show the other one. A summary of other words attached to this vote measures
+        the amendments, not the bill -- the same failure as a gap drawn across versions;
+      * no summary at all -> say so.
+
+    Boule does not write this layer. Not even a one-line condensation: an AI summary of a
+    bill is the same category of artefact this project exists to audit.
+    """
+    if summary is not None:
+        ver = esc(str(summary["version_code"]))
+        desc = summary["action_desc"] or ""
+        attrib = f"CRS, version {ver}" + (f" — {esc(desc)}" if desc else "")
+        return (f'<div class="lbody"><p class="lattr">{attrib}. '
+                f'<a href="{esc(summary["source_url"])}" rel="noopener">source</a></p>'
+                f'<div class="crs">{sanitize.sanitize(summary["text"])}</div></div>')
+
+    if other is not None:
+        return (f'<p class="lbody notwired">No CRS summary exists for '
+                f'{esc(version_label or "this version")}. congress.gov has one for '
+                f'version {esc(str(other["version_code"]))}'
+                + (f' — {esc(other["action_desc"])}' if other["action_desc"] else "")
+                + f', which is a <b>different text</b>, so it is not shown here.</p>')
+
+    return ('<p class="lbody notwired">No CRS summary exists for this bill yet, so this '
+            'layer is empty. Boule does not write it.</p>')
 
 
 def vote_state(off) -> str:

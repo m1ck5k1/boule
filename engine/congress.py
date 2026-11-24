@@ -132,3 +132,26 @@ def fetch_actions(congress: int, bill_type: str, number: int, limit: int = 250) 
             break
         offset += len(batch)
     return out
+
+
+def fetch_summaries(congress: int, bill_type: str, number: int,
+                    limit: int = 20) -> list[dict]:
+    """The CRS summaries, each tagged with the VERSION it describes.
+
+    Every entry carries `versionCode` and `actionDesc` (e.g. '07' / 'Reported to House'),
+    which is what makes a summary pinnable to the exact text being voted on. congress.gov
+    holds a summary for only SOME versions — an empty list, or one whose versionCode does
+    not match the version on the floor, is a normal answer and must be reported as one.
+    """
+    out: list[dict] = []
+    offset = 0
+    while True:
+        page = get(f"/bill/{congress}/{bill_type}/{number}/summaries",
+                   limit=limit, offset=offset)
+        batch = page.get("summaries", [])
+        out.extend(batch)
+        total = page.get("pagination", {}).get("count", len(out))
+        if not batch or len(out) >= total:
+            break
+        offset += len(batch)
+    return out
