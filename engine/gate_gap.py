@@ -30,6 +30,7 @@ Exits 0 on pass, 1 on fail.
 """
 from __future__ import annotations
 
+import re
 import sqlite3
 import sys
 from pathlib import Path
@@ -136,6 +137,34 @@ def main() -> int:
     check("and the spoken equivalent carries the same condition",
           page.count("not yet distinguishable") >= 2,
           f"found {page.count('not yet distinguishable')}")
+    con.close()
+
+    # --- 5. THE INTERFACE CARRIES THE LICENCE, NOT JUST THE CODE -----------------
+    print("\n5. the interface carries the licence")
+    con = fixture(amendment_only=False, readings=400, yea_share=0.9, off_yea=69, off_nay=27)
+    page = render.bill_page(con, 119, "hr", 2347)
+    check("the conditions sit in their own element, so the caveat can be quieter "
+          "than the claim", '<span class="cond">' in page)
+    check("and that element is not the gap colour",
+          ".delta .cond" in (HERE.parent / "web" / "static" / "boule.css").read_text())
+    check("a passage vote closes the ballot box rather than inviting a reading",
+          "Record closed" in page and '<form class="votebox"' not in page)
+    con.close()
+
+    con = fixture(amendment_only=True, readings=7, yea_share=0.857, off_yea=69, off_nay=27)
+    front = render.today_page(con, "2026-11-24")
+    check("with no gap-eligible vote anywhere, the list says so ONCE",
+          front.count("No tracked bill has a passage vote recorded yet") == 1)
+    visible = re.findall(r'<p class="nogap">(.*?)</p>', front, re.S)
+    check("and every VISIBLE row note is a dash, not a repeated sentence",
+          len(visible) >= 1 and all(v.strip() == "—" for v in visible),
+          f"{len(visible)} notes: {sorted(set(v.strip() for v in visible))}")
+    check("the control reads 'Record a view', not a verdict",
+          "Record a view" in front and 'class="vote early"' in front)
+    check("and 'Vote open' is derived from the state, not written as a literal",
+          "Vote open: <b>0</b>" in front
+          and render.vote_state(None) == "early"
+          and render.vote_state({"yea": 1, "nay": 1}) == "closed")
     con.close()
 
     failed = [n for n, ok, _ in RESULTS if not ok]

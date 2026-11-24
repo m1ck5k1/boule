@@ -347,16 +347,21 @@ def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: in
     label = f"{(bill_type or '').upper()} {number}"
     stage = stage_text(row["stage"], row["chamber"], row["current_chamber"])
 
-    if version:
+    state = vote_state(off)
+    if version and state == "closed":
+        vote_ui = '<span class="voted">Record closed</span>'
+    elif version:
         vote_ui = f"""<form class="votebox" method="post" action="/api/vote">
         <input type="hidden" name="congress" value="{esc(congress)}">
         <input type="hidden" name="bill_type" value="{esc(bill_type)}">
         <input type="hidden" name="number" value="{esc(number)}">
         <input type="hidden" name="version_code" value="{esc(version['version_code'])}">
         <input type="hidden" name="next" value="{esc(base_path)}/bill/{esc(congress)}/{esc(bill_type)}/{esc(number)}">
-        <button type="submit" class="vote" name="choice" value="yea">Yea</button>
-        <button type="submit" class="vote" name="choice" value="nay">Nay</button>
-      </form><span class="hint">click once, click to confirm</span>"""
+        <button type="submit" class="vote early" name="choice" value="yea">Yea</button>
+        <button type="submit" class="vote early" name="choice" value="nay">Nay</button>
+      </form><span class="hint">click once, click to confirm</span>
+      <p class="vstate">Record a view — a leaning, not a gap. There is no recorded vote on
+      this text yet, so nothing here can be compared to an official figure.</p>"""
     else:
         vote_ui = '<span class="voted">Voting not open — no text version</span>'
 
@@ -585,7 +590,22 @@ def gap_block(public_pct: int | None, off, note_when_none: str, *,
             f'{esc(off["chamber"])} roll call {esc(str(off["roll_call"]))} (n={n2})']
     if version_label:
         bits.append(f"readings on {esc(version_label)}")
-    return f'<p class="delta">{claim} · {" · ".join(bits)}</p>'
+    # The conditions ride in their own element so the typography can hold them quieter
+    # than the claim -- and so a test can prove they are still there.
+    return (f'<p class="delta">{claim}'
+            f'<span class="cond"> · {" · ".join(bits)}</span></p>')
+
+
+def vote_state(off) -> str:
+    """DESIGN.md §the vote button — the three-state rule, as far as it can be known.
+
+    'open' means the version is on the floor with no recorded vote yet — which needs the
+    /actions feed and cannot be known today, so it is not returned. Until then the honest
+    state is 'early': the reading is a leaning, not a gap, and the page says so. 'closed'
+    is a passage vote of the measure on record: there is nothing current left to compare
+    a reading against, so the control is withdrawn rather than left inviting.
+    """
+    return "closed" if off is not None else "early"
 
 
 def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict, base_path: str = "",
@@ -635,23 +655,26 @@ def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict, base_path:
     else:
         sr = "No public tally yet. No gap can be reported without both tallies."
 
-    gap_html = gap_block(pct_int, official,
-                         "No recorded vote on the text yet — no gap to report." if total
-                         else "No gap can be reported without both tallies.",
+    # On the list, an absent gap is a dash: the REASON is a property of the day, not of
+    # the row, so it is said once above the list rather than twelve times inside it.
+    gap_html = gap_block(pct_int, official, "—",
                          yea=yea, nay=nay, version_label=version_code)
 
     # S3 — the ballot box. A plain form POST, no JS: the vote is the one write,
     # and it goes to the server, which stamps it and appends it.
-    if version_code:
+    state = vote_state(official)
+    if version_code and state == "closed":
+        vote_ui = '<span class="voted">Record closed</span>'
+    elif version_code:
         vote_ui = f"""<form class="votebox" method="post" action="/api/vote">
         <input type="hidden" name="congress" value="{esc(row['congress'])}">
         <input type="hidden" name="bill_type" value="{esc((row['bill_type'] or '').lower())}">
         <input type="hidden" name="number" value="{esc(number)}">
         <input type="hidden" name="version_code" value="{esc(version_code)}">
         <input type="hidden" name="next" value="/">
-        <button type="submit" class="vote" name="choice" value="yea">Yea</button>
-        <button type="submit" class="vote" name="choice" value="nay">Nay</button>
-      </form>"""
+        <button type="submit" class="vote early" name="choice" value="yea">Yea</button>
+        <button type="submit" class="vote early" name="choice" value="nay">Nay</button>
+      </form><span class="actnote">Record a view — a leaning, not a gap</span>"""
     else:
         vote_ui = '<span class="voted">Voting not open — no text version</span>'
 
@@ -742,13 +765,25 @@ def today_page(con: sqlite3.Connection, today: str, base_path: str = "") -> str:
         ledger = ('    <li class="empty">No bills ingested yet. Run '
                   '<code>python3 engine/poll.py</code>.</li>')
 
+    # An absent gap is a property of the DAY, not of a row: said once, above the list,
+    # instead of the same sentence twelve times inside it.
+    if official:
+        gap_note = ""
+    else:
+        gap_note = ('  <p class="empty">No tracked bill has a passage vote recorded yet, '
+                    'so no gap can be reported for any of them. A reading is still '
+                    'welcome — it is recorded as a leaning.</p>\n')
+
+    open_count = sum(1 for r in rows if vote_state(
+        official.get((r["congress"], r["bill_type"], r["number"]))) == "open")
+
     body = masthead([
         f'Today — <b><time datetime="{esc(today)}">{esc(human_date(today))}</time></b>',
         f"Bills tracked: <b>{len(rows)}</b>",
-        "Vote open: <b>0</b>",
+        f"Vote open: <b>{open_count}</b>",
     ]) + f"""
 <main id="main">
-  <ul class="ledger">
+{gap_note}  <ul class="ledger">
 {ledger}
   </ul>
 
