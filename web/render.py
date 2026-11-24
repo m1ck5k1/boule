@@ -26,6 +26,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "engine"))
 
 import sanitize  # noqa: E402
+import forecast as forecast_mod  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 LEGAL = ROOT / "legal"
@@ -406,6 +407,15 @@ def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: in
         for a in actions) or '        <li class="arow"><span class="atext">No actions recorded.</span></li>'
     l1 = l1_html(summary, other_summary, version_label)
 
+    # The forecast — Boule's own claim, and the one place the page says something about the
+    # future. Read here, never written here: the web tier has a read-only handle.
+    try:
+        fc = forecast_mod.latest(con, congress, bill_type, number)
+        fc_tally = forecast_mod.tally(con, congress, bill_type, number)
+    except sqlite3.OperationalError:      # table absent on an older db
+        fc, fc_tally = None, {}
+    fc_html = forecast_html(fc, fc_tally)
+
     introduced = human_date(row["introduced_on"]) if row["introduced_on"] else "date unknown"
     ver_line = (f"Version pinned: <b>{esc(version['version_code'])} · {esc(version['label'])}</b>"
                 " — this vote is on that text." if version else "No text version recorded yet.")
@@ -423,6 +433,8 @@ def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: in
 {tallies_html}
     {gap_html}
   </div>
+
+{fc_html}
 
   <div class="act" style="text-align:left">
     {vote_ui}
@@ -659,6 +671,63 @@ def l1_html(summary, other, version_label: str | None) -> str:
 
     return ('<p class="lbody notwired">No CRS summary exists for this bill yet, so this '
             'layer is empty. Boule does not write it.</p>')
+
+
+def forecast_html(fc, tally: dict | None = None) -> str:
+    """The forecast — Boule's own claim, boxed, labelled, and scorable.
+
+    OPINION, and it says so on its face: the author is named, the day it was made is named,
+    and the basis is on the page rather than in a commit message. It is never the only thing
+    on the screen (DESIGN.md), and it is never in `--signal`, which belongs to the gap and to
+    nothing else.
+
+    Where an outcome has been recorded it is shown BESIDE the claim, not folded into it — the
+    forecast is not rewritten to match what happened. Where none has, the page says
+    "unscored" rather than letting silence read as a win. That is the whole point of the daily
+    rule: a guess you may revise after the fact cannot be scored, and an unscorable guess is
+    a horoscope.
+    """
+    if fc is None:
+        return ('<p class="nogap">No forecast on record for this bill — and no path to a '
+                'vote identified, so there is nothing worth guessing about.</p>')
+
+    span = (f'{human_date(fc["window_start"])} – {human_date(fc["window_end"])}'
+            if fc["window_start"] != fc["window_end"]
+            else human_date(fc["window_start"]))
+
+    outcome = fc["outcome"] if "outcome" in fc.keys() else None
+    if outcome == "hit":
+        verdict = ('<p class="fcverdict hit">Scored: <b>hit</b> — the vote landed '
+                   f'{esc(human_date(fc["resolved_on"]))}.</p>')
+    elif outcome == "miss":
+        verdict = ('<p class="fcverdict miss">Scored: <b>miss</b> — the vote came '
+                   f'{esc(human_date(fc["resolved_on"]))}, outside the window.</p>')
+    elif outcome == "void":
+        verdict = ('<p class="fcverdict">Scored: <b>void</b> — the bill died with the '
+                   'Congress, so no vote was ever due.</p>')
+    else:
+        verdict = ('<p class="fcverdict">Not yet scored — the vote has not happened.</p>')
+
+    # The scoreboard. Without it, the moment tomorrow's guess is written yesterday's outcome
+    # falls off the page, and the accountability only shows while it is uninteresting.
+    t = tally or {}
+    if t.get("hits") or t.get("misses") or t.get("voids"):
+        record = (f'Record on this bill: <b>{t.get("hits", 0)} hit</b> · '
+                  f'{t.get("misses", 0)} miss · {t.get("voids", 0)} void · '
+                  f'{t.get("unscored", 0)} unscored')
+    else:
+        record = 'No forecast on this bill has been settled yet.'
+    verdict += f'<p class="fcverdict">{record}</p>'
+
+    return (f'<div class="fcbox">'
+            f'<p class="fclabel">Opinion — Boule\'s, not CRS\'s</p>'
+            f'<p class="fctext">Next gap-eligible vote expected <b>{span}</b> '
+            f'({fc["confidence"]}% confidence).</p>'
+            f'<p class="fcbasis">{esc(fc["basis"])}</p>'
+            f'<p class="fcmeta">Forecast by {esc(fc["author"])}, made '
+            f'{esc(human_date(fc["made_on"]))} · {esc(fc["method_version"])} · '
+            f'one per day, never revised</p>'
+            f'{verdict}</div>')
 
 
 def vote_state(off) -> str:

@@ -284,6 +284,15 @@ h1.wordmark{
 .crs{ font-size:13.5px; line-height:1.55; }
 .crs p{ margin:0 0 8px; }
 .crs p:last-child{ margin-bottom:0; }
+/* The forecast — Boule's own claim, so it is BOXED and LABELLED, and it is deliberately NOT
+   in --signal: that colour belongs to the gap, and an opinion wearing the gap's colour is
+   claiming to be one. */
+.fcbox{ border:1px solid var(--rule-hard); padding:12px 14px; margin:12px 0 0; }
+.fclabel{ margin:0 0 6px; font-size:10px; letter-spacing:var(--ds); text-transform:uppercase; font-weight:700; }
+.fctext{ margin:0 0 6px; font-size:13.5px; line-height:1.5; }
+.fcbasis{ margin:0 0 8px; font-size:12.5px; line-height:1.5; color:var(--ink-2); }
+.fcmeta{ margin:0 0 6px; font-size:10px; letter-spacing:var(--ds); text-transform:uppercase; color:var(--ink-2); }
+.fcverdict{ margin:0; font-size:11px; color:var(--ink-2); font-style:italic; }
 .hint{ font-size:11px; color:var(--ink-2); letter-spacing:var(--ds); text-transform:uppercase; }
 .atl{ list-style:none; margin:0; padding:0; }
 .arow{

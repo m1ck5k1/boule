@@ -242,3 +242,58 @@ CREATE TABLE IF NOT EXISTS bill_summaries (
 
 CREATE INDEX IF NOT EXISTS idx_summaries_bill
   ON bill_summaries (congress, bill_type, number, version_code);
+
+-- The forecast: a dated guess about WHEN the next gap-eligible vote will land.
+--
+-- It is append-only, one per bill per day, and NEVER edited — the rule is enforced by the
+-- store (the UNIQUE below, plus the triggers), not by anyone's good intentions. A forecast
+-- that can be revised after the fact is not a forecast, it is a commentary; and this
+-- project's entire subject is the difference between a claim and what actually happened.
+-- So Boule's own claims get the same treatment as a reading: the record stands, and a later
+-- record says what became of it.
+--
+-- `made_on` is a DAY, not a timestamp, because the rule is a daily one. `author` is never
+-- blank: an anonymous forecast is a horoscope.
+CREATE TABLE IF NOT EXISTS forecasts (
+  forecast_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+  congress       INTEGER NOT NULL,
+  bill_type      TEXT    NOT NULL,
+  number         INTEGER NOT NULL,
+  made_on        TEXT    NOT NULL,      -- ISO date: the day the forecast was made
+  window_start   TEXT    NOT NULL,      -- earliest plausible vote date
+  window_end     TEXT    NOT NULL,      -- latest plausible vote date
+  confidence     INTEGER NOT NULL CHECK (confidence BETWEEN 0 AND 100),
+  basis          TEXT    NOT NULL,      -- what it rests on, in the author's own words
+  author         TEXT    NOT NULL,      -- e.g. 'h3rm5k1 (AI)'. Never empty.
+  method_version TEXT    NOT NULL,
+  created_at     TEXT    NOT NULL,
+  UNIQUE (congress, bill_type, number, made_on)
+);
+
+CREATE TRIGGER IF NOT EXISTS forecasts_no_update BEFORE UPDATE ON forecasts
+BEGIN SELECT RAISE(ABORT, 'forecasts is append-only: a forecast is not revised'); END;
+
+CREATE TRIGGER IF NOT EXISTS forecasts_no_delete BEFORE DELETE ON forecasts
+BEGIN SELECT RAISE(ABORT, 'forecasts is append-only: a forecast is not withdrawn'); END;
+
+-- What became of a forecast. A separate append-only table for the same reason votes never
+-- get updated: the forecast is not rewritten to match the outcome, the outcome is recorded
+-- beside it. Scoring is the only thing that makes a forecast more than an opinion.
+CREATE TABLE IF NOT EXISTS forecast_outcomes (
+  outcome_id  INTEGER PRIMARY KEY AUTOINCREMENT,
+  forecast_id INTEGER NOT NULL REFERENCES forecasts(forecast_id),
+  resolved_on TEXT    NOT NULL,
+  outcome     TEXT    NOT NULL CHECK (outcome IN ('hit', 'miss', 'void')),
+  vote_ref    TEXT,                     -- the roll call that settled it, when there is one
+  note        TEXT,
+  created_at  TEXT    NOT NULL
+);
+
+CREATE TRIGGER IF NOT EXISTS outcomes_no_update BEFORE UPDATE ON forecast_outcomes
+BEGIN SELECT RAISE(ABORT, 'forecast_outcomes is append-only'); END;
+
+CREATE TRIGGER IF NOT EXISTS outcomes_no_delete BEFORE DELETE ON forecast_outcomes
+BEGIN SELECT RAISE(ABORT, 'forecast_outcomes is append-only'); END;
+
+CREATE INDEX IF NOT EXISTS idx_forecasts_bill
+  ON forecasts (congress, bill_type, number, made_on);

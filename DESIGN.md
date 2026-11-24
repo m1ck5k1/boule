@@ -127,6 +127,38 @@ material, and every layer names its source.
 Where Boule *does* interpret, it is **boxed, labelled Opinion, and never the only text on the
 screen** — and it states that it was not written by CRS.
 
+### The forecast — Boule's own claim, and the only place the page talks about the future
+
+The Bill page carries a forecast of **when the next gap-eligible vote will land**. It is
+Opinion, and it is built so that it can be *scored*:
+
+- **Boxed, labelled Opinion, never in `--signal`.** That colour belongs to the gap, and an
+  opinion wearing the gap's colour is claiming to be one. The box uses `--rule-hard` and the
+  attribution sits in `--ink-2`.
+- **One per bill per day, never revised.** Enforced by the store — a UNIQUE constraint on
+  `(bill, day)` plus triggers against UPDATE and DELETE — not by the author's discipline. A
+  second attempt the same day is *refused and says so*.
+- **The author and the day are on the page**, not in a commit message: *"Forecast by h3rm5k1
+  (AI), made Tue 24 Nov 2026 · boule-forecast/1 · one per day, never revised."* The author is
+  an AI and the page says so.
+- **The basis travels with it.** A forecast whose reasoning is invisible cannot be checked, and
+  a forecast with no stated basis is refused by the writer.
+- **The outcome is recorded BESIDE the claim, never folded into it.** The forecast is not
+  rewritten to match what happened; a separate append-only row says what became of it. Where
+  nothing has been settled, the page says *"Not yet scored"* — silence must not read as a win.
+- **A scoreboard sits under it**, because the page shows the *latest* forecast and yesterday's
+  outcome would otherwise vanish the moment a new day's guess is written. Accountability that
+  disappears when it becomes interesting is not accountability.
+
+The reason for the daily rule is the whole reason the project exists: **a guess you may revise
+after the fact cannot be scored, and an unscorable guess is a horoscope.** Boule's own claims
+get the same treatment as a reading — the record stands as written, and a later record says what
+became of it.
+
+**Where there is no path to a vote, there is no forecast.** Eleven of twelve tracked bills are
+in committee; the page says *"no forecast on record — and no path to a vote identified, so there
+is nothing worth guessing about"* rather than manufacturing a coin-flip for each of them.
+
 **Accessibility note — target size.** WCAG 2.2 AA (2.5.8) requires **24×24 CSS px**, not 44; 44 is
 the AAA/Apple-HIG figure. Hold **≥44px on genuine controls** (buttons, nav links, skip link) and ≥24px
 on links that sit inline in a sentence, which 2.5.8 explicitly exempts.
