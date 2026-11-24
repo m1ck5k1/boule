@@ -29,6 +29,14 @@ The word for that output is **the gap**.
 - **Not a rival legislature.** It cannot bind anyone. It observes.
 - **Not a poll.** Polls are occasional and selective; this is continuous and per-bill.
 - **Not a social network.** Engagement is not a goal. See §9.
+- **Not a forum, and not an assistant.** *Closed 24 Nov 2026, by decision — not deferred.* No
+  threads, no replies, no hosted opinions: a discussion surface is **a second tally nobody can
+  check**, sitting in the same window as the one that can, and trivially manufacturable. And no
+  Q&A surface either: answering questions means paying per question *and* becoming a narrator,
+  which is the exact artefact this project exists to audit. Both are out of remit.
+  *(The pull-only machine surface survives this cut and is a different thing: we publish the
+  sources and the numbers, and the reader's own assistant does the answering. Nothing is hosted,
+  nothing is narrated, and Boule pays for none of it.)*
 - **Not a native app.** No app store, no gatekeeper, no second codebase.
 - **Not distributed, not blockchain, not microservices.** Deliberately boring — see §11.
 
