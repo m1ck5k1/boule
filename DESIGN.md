@@ -181,6 +181,22 @@ The gap is **drawn, never framed**.
   agrees with the bill. Measuring the public's reading against a procedural manoeuvre would
   claim the two *should* match, which is nonsense. Procedural votes are still **recorded and
   shown** — the official record is not ours to hide — they simply carry no Δ.
+- **A vote *on an amendment* is not a vote of the text either.** It is the chamber deciding
+  what the text will *say*, not whether it agrees with the bill — so subtracting a reading of
+  the bill from it compares two different questions. Same rule as a procedural vote, one step
+  subtler, and it was live: HR 2347's Δ was measured against *"On the Amendment S.Amdt. 6883"*
+  (69-27) while the readings were pinned to the as-introduced text. Amendment votes are
+  classified `other` — recorded, listed, no Δ.
+- **The Δ carries its conditions, always.** Beneath the readout: the reading count, the 95%
+  interval for the **difference** (not for either side), and the roll call with its n. Where
+  the interval is wider than the gap the readout says *"not yet distinguishable from the
+  official figure"* instead of claiming a difference. At 7 readings against a 96-vote roll
+  call that interval is ±27 points, so the honest readout is the one that refuses the claim.
+  The visually-hidden sentence carries the **same** condition: an accessible equivalent that
+  claims more than the visible line is a second, quieter lie.
+- **The version the readings are pinned to is named in the Δ line**, so a reader can see when
+  the two numbers are not about the same text. (Refusing the comparison outright needs
+  official votes attributed to versions — the `/actions` feed work.)
 - **Where no vote of the text exists, no gap is drawn.** The official track stays empty and
   reads `—`, with the note *"No recorded vote on the text yet — no gap to report."* A forecast
   is not a gap, and the design must not imply one.

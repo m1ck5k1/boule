@@ -35,6 +35,37 @@ Remove all styling — are the two numbers still the loudest thing on the page? 
 ### 3. The feature filter
 Does it make the gap clearer? If not, it does not ship. (VISION.md §9)
 
+### 4. The gap's licence — same thing, same version, and the uncertainty travels
+
+A gap is a **subtraction**, so it may only be drawn between two numbers that measure
+the same thing, and it must carry the conditions under which it was measured. Three
+rules, and a gate (`engine/gate_gap.py`) that fails if any is broken:
+
+- **Same proposition.** Only a vote *of the measure* may carry a gap. A cloture motion
+  or a motion to proceed is the chamber deciding whether to *do* something; a vote **on
+  an amendment** is the chamber deciding what the text will *say*. Neither is agreement
+  with the bill, so neither may be subtracted from a reading of it. Amendment votes are
+  classified `other`: recorded, listed, never measured against.
+- **Same version.** The readings and the official vote must be on the same text. Where
+  they are not, the gap must not be drawn. *(Enforcement is partial: the readout now
+  names the version the readings are pinned to, so a mismatch is visible; refusing the
+  comparison needs official votes attributed to versions — the `/actions` feed work.)*
+- **The uncertainty travels.** Every drawn gap prints the reading count, the 95%
+  interval for the *difference*, and the roll call with its n. Where the interval is
+  wider than the gap, the page says **"not yet distinguishable from the official
+  figure"** and does not claim a difference. A gap that cannot be told from noise is
+  not a gap, and this project does not publish one. The spoken equivalent carries the
+  same condition — an accessible version that claims more than the visible line is a
+  second, quieter lie.
+
+**This is not decoration; it is the same rule as `—` never being `0`.** The defect that
+forced it: HR 2347's headline *Δ14 points public ahead* was measured against
+**"On the Amendment S.Amdt. 6883 to H.R. 2347"** (amendment agreed to, 69-27) while the
+readings were pinned to the as-introduced text — two different questions, subtracted,
+with 7 readings against a 96-vote roll call (±27 points). Corrected 24 Nov: the vote is
+now `other`, **no gap-eligible vote remains on any tracked bill**, and the site publishes
+zero Δ claims rather than one false one.
+
 ---
 
 ## Accessibility — where we actually are
@@ -101,9 +132,9 @@ pass/fail test, not a demo. No stage starts until the previous gate passes.
 | **S3.5** | the **Bill page** — a real `/bill/{congress}/{type}/{number}` route (the first dynamic route) | server and static are byte-identical for a bill page; the stage matches the DB; zero JS | ✅ **done** — TWIN gate 5/5 |
 | **S4** | gap computed from public ⨯ official | the gap equals `public% − official%` on a known bill; a bill with **no** official vote renders `—`, never `0` | ✅ **done 19 Nov** — `f6b8988`, live, Δ 28 on HR 2347 |
 | **S5** | the ballot box becomes **device-scoped**: a key is issued at install and refused a second reading on the same `(bill, version)` | the same device key **cannot** record two readings on one `(bill, version)`; `provenance` reads `device` vs `anonymous` | ✅ **done 19 Nov** — `gate_s5.py` 10/10 and `gate_s5_http.py` 10/10; the refusal is a 409 page, not an error |
-| **S6** | **installable PWA** (manifest, service worker, icons) | "Add to Home Screen" installs, and the app holds a key the server honours | ✅ **built 23 Nov** — manifest, root-scoped worker, paper/ink icons, and idempotent issuance. `gate_s6.py` 13/13 covers everything the install depends on. **The install itself is NOT automated** and the gate says so: it is a gesture on a real device, and a grep of a worker's fetch strategy is not a test of it |
+| **S6** | **installable PWA** (manifest, service worker, icons) | "Add to Home Screen" installs, and the app holds a key the server honours | ✅ **built 23 Nov, reachable 24 Nov** — manifest, root-scoped worker, paper/ink icons, idempotent issuance. `gate_s6.py` **16/16** (was 13/13). **HTTPS landed 24 Nov** (`boule.incidium.net` via Cloudflare Tunnel), so the install is now possible and the device cookie is actually stored. A defect found on the live origin the same day: the manifest lived at `/static/manifest.webmanifest` with `start_url`/`scope` of `"."`, which a browser resolves **relative to the manifest's own URL** — so the installed app was scoped to `/static/` and opened at a **404**. The manifest now sits at the site root, and the gate resolves both values the way a browser does and asserts the resolved `start_url` is a real page. **The install gesture itself is still NOT automated** and the gate says so |
 | **S7** | **the published ledger** — `/data`, the audit pack, the aggregates (`DATA.md`) | `engine/gate_publish.py` passes, and the published tally recomputes to the same number the page shows | ⬜ |
-| **S8** | public deploy (VPS + domain) *(was S7)* | first non-tailnet visitor can read and vote | ⬜ |
+| **S8** | public deploy — **self-hosted on mbp9 behind the Cloudflare Tunnel** *(was "VPS + domain")* | first non-tailnet visitor can read and vote | ⬜ **read/write origin is live; the decision to self-host rather than rent was taken 24 Nov** |
 
 ### Two ordering corrections, both forced by verified constraints
 
@@ -114,6 +145,15 @@ is what makes a device key durable — which is what turns "one reading per devi
 claim rather than a hopeful one. TLS is therefore the prerequisite of the *identity mechanism
 itself*. A **Cloudflare Tunnel** on `boule.incidium.net` gives HTTPS on a domain we own, with no
 open ports; that is the shortest path, and it also fronts S8.
+
+**Done 24 Nov — and the reasoning is now evidence rather than theory.** `cloudflared` runs as a
+system unit on mbp9 and proxies `boule.incidium.net` to the tailnet-bound app; the CNAME overrides
+the wildcard. Measured on the live origin: over `https://boule.incidium.net` the browser stores
+`boule_device` with `Secure; HttpOnly; SameSite=Lax`; over the plain-HTTP tailnet address
+(`http://100.109.45.107:8123`) `isSecureContext` is **false** and the browser stores **no cookie at
+all**. So the tailnet address is a **read-only view** of Boule: a reading taken there is silently
+anonymous and the one-reading-per-device refusal never fires. Anyone reviewing on the tailnet is
+looking at a real page and a working tally, but not at the identity mechanism.
 
 **2. S3 must record provenance from its first row.** The column has to exist from the start, or
 S5 arrives with a body of already-cast readings that cannot be attributed. **Settled in
@@ -144,10 +184,12 @@ So brand verification is **optional**, and the honest reason to do the policy an
 that a project recording people's political opinions owes them one regardless of what a vendor
 requires — and any future sensitive scope makes it mandatory.
 
-**Done:** `legal/privacy.html` is written and served at `/privacy`, linked from the homepage footer
-(as Google requires), axe-clean. It names the exact three scopes, carries the required Limited Use
-sentence and a link to the Google API Services User Data Policy, and states plainly what is never
-done.
+**Done:** `legal/privacy.html` is written and served at `/privacy`, linked from the homepage
+footer, axe-clean. *(Corrected 24 Nov: this line used to claim the policy "names the exact three
+scopes", carries the Limited Use sentence and links the Google API Services User Data Policy. It
+no longer does any of that — sign-in was dropped, so there are no scopes and no Google data. The
+policy now says so explicitly under "No Google data, and no third parties", and states plainly
+what is never done. The claim was stale, not the policy.)*
 
 **The append-only / erasure tension is resolved in writing.** Deleting an account destroys the
 identity link so the votes become permanently unlinkable, and the anonymous count stays. Changing a
@@ -211,12 +253,61 @@ rendering every route in `ROUTES` through the same function the server uses, inc
 `stub_page` output for surfaces that are named but not built — a link to a 404 is the same class of
 lie as a button that does nothing.
 
-### S1 blocker — resolved, with a caveat
+### The machine surface — "a share button, but for AI"
 
-`CONGRESS_API_KEY` is **not** local (the repo `.env` holds only `AIRTABLE_PAT`), and GitHub
-Actions secrets cannot be read back. However **`DEMO_KEY` works** (verified: HTTP 200, real
-payload) at **`x-ratelimit-limit: 10`** — enough to *prove* the S1 gate against one bill, not
-enough to run the poller. The real key is still needed for the pipeline proper.
+Agreed 24 Nov. The unit of sharing is **not the bill**: it is the **bill at a version**.
+A bill is not a document, it is a document with versions, and a reading, a tally and a CRS
+summary are each pinned to one. Share the wrong axis and the reader's AI analyses different
+text than the tally was cast on.
+
+**The shape.** One URL, negotiated — the same discipline as the manifest link:
+
+```
+/bill/119/hr/2347/07            HTML to a browser, markdown to a machine
+                                (Accept: text/markdown, or ?format=md)
+/bill/119/hr/2347/07.json       the same facts as keys, for tooling
+/llms.txt                       the map of these surfaces
+/bills.jsonl                    the bulk shape — and S7's ledger is the same shape
+```
+
+The markdown is the **reading stack serialised** — front-matter (identity, version, stage,
+sources, retrieved-at, hash), then L1 CRS **verbatim with attribution**, L2 the diff, L3 a
+link — and only then a fenced block that is unambiguously Boule's: the two tallies, the gap,
+and n.
+
+**The rules:**
+
+- **Sources, not a synopsis.** DESIGN.md already forbids Boule-authored prose in L0–L2. An AI
+  summary of a bill is the same category of artefact this project exists to audit, so the
+  machine surface must not become one. Ship the government's material and the numbers.
+- **Pull only.** We publish a resource; the reader's assistant fetches it. Nothing is pushed
+  at a model, so Boule is never a data processor for someone else's. *(Push is not forbidden,
+  only unbuilt — it is a decision to take deliberately.)*
+- **The numbers carry their conditions** (§4), always: n, interval, version, chamber,
+  proposition.
+- **Inline L1/L2, link L3.** Measured: the CRS summary is 1,479 chars (~370 tokens); HR 2347
+  as introduced is 6,583 B, and **Senate-engrossed it is 951,153 B — ~238k tokens, 119% of a
+  200k context window for one bill.** The whole tracked corpus at L1+L2 is ~19k tokens; at L3
+  it is ~2.9M. L3 therefore travels by reference, never inlined by default.
+- **Publish the nulls.** The core bet is that the public tally diverges *for a meaningful
+  fraction of bills*. That claim can only be tested against all of them — a ledger that
+  surfaces only the interesting divergences is p-hacking by curation.
+- **Say pseudonymised, not anonymised** (DATA.md). The honest word, here too.
+
+**Parked, with the condition to un-park it:** the bulk pack once S7's ledger exists (it is
+the same shape, so it is nearly free); a query surface / MCP server until an agent asks a
+question rather than fetching a file; and push until someone asks for it.
+
+**Blocked on the feeds, not on design:** without `/summaries` and the version diff, the pack
+is a title, a stage, and a link to congress.gov — a scraper target with nothing added.
+
+### S1 blocker — CLOSED (corrected 24 Nov)
+
+This section used to say `CONGRESS_API_KEY` was **not** local and that only `DEMO_KEY` worked.
+**That was wrong and is now corrected:** the repo `.env` holds both `AIRTABLE_PAT` and
+`CONGRESS_API_KEY`, and the key is live — `GET /v3/bill/119/hr/2347` returns **HTTP 200** with a
+real payload ("Bipartisan American Affordability and Jobs Act of 2026"). The 40-character key is a
+real key, not `DEMO_KEY`. Nothing about the pipeline is blocked on credentials.
 
 ---
 
@@ -253,6 +344,9 @@ decentralised DNS · the LOUD/marketing register · native apps.
 
 | Date | Change |
 |---|---|
+| 2026-11-24 | **The gap's licence, after a live defect.** HR 2347's headline *Δ14 points public ahead* was measured against **"On the Amendment S.Amdt. 6883"** (amendment agreed to, 69-27) while the readings were pinned to the as-introduced text — two different questions subtracted, with 7 readings against a 96-vote roll call. Three fixes: amendment votes are no longer `of_the_text` (they decide what the text will *say*, not whether the chamber agrees with it — the same error as a cloture motion, one step subtler); every drawn gap now prints its reading count, the 95% interval for the *difference*, and the version the readings are pinned to, and says **"not yet distinguishable"** when the interval is wider than the gap; and the spoken equivalent carries the same condition. New gate `engine/gate_gap.py` (10/10), which provably fails on the old classifier. The live DB was reclassified — **no gap-eligible vote remains on any tracked bill, so the site now publishes zero Δ claims rather than one false one.** |
+| 2026-11-24 | **HTTPS live; the install is real.** `boule.incidium.net` served by a Cloudflare Tunnel (`cloudflared` system unit on mbp9, CNAME overriding the wildcard, no inbound port). A manifest defect found on the live origin: `start_url`/`scope` of `"."` in a manifest served from `/static/` resolve to `/static/` — Chrome scoped the installed app there and opened it at a **404**. Manifest moved to the site root, gate_s6 13→**16 criteria**, and the new criteria resolve both values the way a browser does. Also measured: over the plain-HTTP tailnet origin the browser stores **no** device cookie (`Secure` refused), so the tailnet address is a **read-only view** and only the HTTPS origin has identity. |
+| 2026-11-24 | **The machine surface agreed** (see §The machine surface): a version-pinned markdown twin of the reading stack, pull-only, with the numbers carrying their conditions — and the nulls published. |
 | 2026-11-17 | Roadmap opened. Accessibility added as a standing requirement, with its current state recorded honestly rather than assumed. |
 | 2026-11-23 | **S6 built.** Manifest, a root-scoped service worker (network-first for pages — a cached tally would be a stale one — cache-first only for the shell), and icons built from rules and type in Boule's own paper/ink, since DESIGN.md forbids icons in the *UI* and a launcher icon is not a UI icon. `/api/device` became **idempotent**: the worker and the page both call it and neither can read an HttpOnly cookie, so the server answers that question instead — a reinstall neither forks the identity nor adds a row. One deliberate script (`pwa.js`): a worker cannot be registered without one. |
 | 2026-11-19 | **S4 closed** (Δ 28 on HR 2347). **S5 built and gated**: a device key is issued at `/api/device` and set as an HttpOnly/Secure/SameSite cookie, one reading per device per version is refused by a **partial UNIQUE index** (not by a code check, so there is no window to race), and `provenance` is forced to agree with `voter_key` by trigger. Anonymous readings stay repeatable — the limit is a claim about *devices*, and must not silently become one about people. |

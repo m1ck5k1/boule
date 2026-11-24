@@ -13,6 +13,7 @@ votes yet" is a fact. That distinction is the whole product.
 from __future__ import annotations
 
 import html
+import math
 import re
 import sqlite3
 from datetime import date
@@ -103,7 +104,7 @@ def page(title: str, body: str, current_nav: str = "Today",
 <meta name="theme-color" content="#14130F">
 <link rel="icon" href="{href('/static/icon.svg')}" type="image/svg+xml">
 <link rel="apple-touch-icon" href="{href('/static/icon-180.png')}">
-<link rel="manifest" href="{href('/static/manifest.webmanifest')}">
+<link rel="manifest" href="{href('/manifest.webmanifest')}">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -311,17 +312,30 @@ def bill_page(con: sqlite3.Connection, congress: int, bill_type: str, number: in
     gap_html = gap_block(
         pct_int, off,
         "No recorded vote on the text yet — no gap to report." if total
-        else "No votes yet — no gap to report.")
+        else "No votes yet — no gap to report.",
+        yea=yea, nay=nay,
+        version_label=(f"v{version['version_code']} ({version['label']})"
+                       if version else None))
 
     # The block above is aria-hidden, so the figures have to live in a spoken sentence.
+    # The spoken version carries the SAME conditions as the printed one — an accessible
+    # equivalent that claims more than the visible line would be a second, quieter lie.
     if total:
         sr = f"Public tally: {yea} for, {nay} against — {total} cast, {pct_int}% in favour."
         if off is not None and off_int is not None:
             d = pct_int - off_int
+            n_off = int(off["yea"]) + int(off["nay"])
+            ci = _ci_points(yea / total, total,
+                            int(off["yea"]) / n_off if n_off else 0.0, n_off)
             sr += (f" Official tally: {off['yea']} for, {off['nay']} against, "
-                   f"{off_int}% in favour, {off['chamber']} roll call {off['roll_call']}. "
-                   f"Gap: {abs(d)} point{'s' if abs(d) != 1 else ''} "
-                   f"{'public ahead' if d > 0 else 'official ahead' if d < 0 else 'level'}.")
+                   f"{off_int}% in favour, {off['chamber']} roll call {off['roll_call']}. ")
+            if abs(d) <= ci:
+                sr += (f"Gap: {abs(d)} points, which is inside the margin of error at "
+                       f"this sample size — not yet distinguishable from the official "
+                       f"figure.")
+            else:
+                sr += (f"Gap: {abs(d)} point{'s' if abs(d) != 1 else ''} "
+                       f"{'public ahead' if d > 0 else 'official ahead' if d < 0 else 'level'}.")
         else:
             sr += " No recorded vote on the text yet, so no gap can be reported."
     else:
@@ -524,19 +538,54 @@ def official_pct(row) -> int | None:
     return round(100 * y / (y + n)) if (y + n) else None
 
 
-def gap_block(public_pct: int | None, off, note_when_none: str) -> str:
-    """Either the Δ readout, or the honest note saying why there is no gap."""
+def _ci_points(p1: float, n1: int, p2: float, n2: int) -> float:
+    """Half-width of the 95% interval for the DIFFERENCE of two proportions.
+
+    The gap is a subtraction, so its uncertainty is the uncertainty of the
+    subtraction — not the uncertainty of either side. At 7 readings against a 96-vote
+    roll call that is ±27 points, which is the entire reason this number is printed.
+    """
+    if n1 <= 0 or n2 <= 0:
+        return 100.0
+    se = math.sqrt(p1 * (1 - p1) / n1 + p2 * (1 - p2) / n2)
+    return 1.96 * se * 100
+
+
+def gap_block(public_pct: int | None, off, note_when_none: str, *,
+              yea: int = 0, nay: int = 0, version_label: str | None = None) -> str:
+    """Either the Δ readout — WITH its conditions — or the note saying why there is none.
+
+    A gap is a subtraction of two numbers that must measure the same thing, and the
+    subtraction carries its own uncertainty. So the readout names the reading count,
+    the interval, and the version the readings are pinned to; and where the interval
+    is wider than the gap it reports that instead of claiming a difference. A gap that
+    cannot be told apart from noise is not a gap, and this project does not publish one.
+    """
     off_int = official_pct(off)
     if public_pct is None or off_int is None:
         return f'<p class="nogap">{esc(note_when_none)}</p>'
+
+    n1 = int(yea) + int(nay)
+    n2 = int(off["yea"]) + int(off["nay"])
+    ci = _ci_points(int(yea) / n1 if n1 else 0.0, n1,
+                    int(off["yea"]) / n2 if n2 else 0.0, n2)
+
     d = public_pct - off_int
-    if d == 0:
-        movement = "level"
+    if abs(d) <= ci:
+        claim = (f"&#916; {abs(d)} point{'' if abs(d) == 1 else 's'} — not yet "
+                 f"distinguishable from the official figure")
+    elif d == 0:
+        claim = "&#916; 0 points — level"
     else:
-        movement = "public ahead" if d > 0 else "official ahead"
-    return (f'<p class="delta">&#916; {abs(d)} point{"s" if abs(d) != 1 else ""} '
-            f'{movement} · {esc(off["chamber"])} roll call {esc(str(off["roll_call"]))}'
-            f'</p>')
+        claim = (f"&#916; {abs(d)} point{'' if abs(d) == 1 else 's'} "
+                 f"{'public ahead' if d > 0 else 'official ahead'}")
+
+    bits = [f'{n1} reading{"" if n1 == 1 else "s"}',
+            f"&#177;{ci:.0f} points at 95%",
+            f'{esc(off["chamber"])} roll call {esc(str(off["roll_call"]))} (n={n2})']
+    if version_label:
+        bits.append(f"readings on {esc(version_label)}")
+    return f'<p class="delta">{claim} · {" · ".join(bits)}</p>'
 
 
 def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict, base_path: str = "",
@@ -588,7 +637,8 @@ def bill_row(row: sqlite3.Row, version_code: str | None, tally: dict, base_path:
 
     gap_html = gap_block(pct_int, official,
                          "No recorded vote on the text yet — no gap to report." if total
-                         else "No gap can be reported without both tallies.")
+                         else "No gap can be reported without both tallies.",
+                         yea=yea, nay=nay, version_label=version_code)
 
     # S3 — the ballot box. A plain form POST, no JS: the vote is the one write,
     # and it goes to the server, which stamps it and appends it.

@@ -53,6 +53,13 @@ def build(db: str, out: Path, base_path: str = "", today: str | None = None) -> 
             shutil.copy2(asset, static_out / asset.name)
             written.append(static_out / asset.name)
 
+    # The manifest belongs at the SITE ROOT, not under /static/: its start_url and scope
+    # are resolved relative to the manifest's OWN URL, so from the root "." means the
+    # site root -- and the same holds in a subpath deploy, where the root is /boule/.
+    manifest_out = out / "manifest.webmanifest"
+    shutil.copy2(HERE / "manifest.webmanifest", manifest_out)
+    written.append(manifest_out)
+
     # GitHub Pages serves 404.html for unknown paths; give it the site's own page
     # rather than GitHub's, so a bad link still looks like Boule.
     not_found = out / "404.html"

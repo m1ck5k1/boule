@@ -42,22 +42,41 @@ _PROCEDURAL = (
 )
 
 # Votes that are about the measure itself.
+#
+# "On the amendment" and "on agreeing to the amendment" are deliberately NOT here.
+# A vote on an amendment decides what the text will SAY; it is not the chamber saying
+# it agrees with the bill. Drawing a gap against one compares a reading of the bill
+# with a vote on a proposal to change it -- two different questions, subtracted. That
+# is the same error as drawing a gap against a procedural manoeuvre, one step subtler,
+# and it was live: HR 2347's headline gap was measured against
+# "On the Amendment S.Amdt. 6883" (amendment agreed to, 69-27) while the readings were
+# pinned to the as-introduced text. Amendment votes are therefore classified `other`:
+# recorded, listed, and never measured against.
 _OF_THE_TEXT = (
-    "on passage", "on agreeing to the amendment", "on the amendment",
-    "suspend the rules and pass", "on concurring", "on agreeing to the resolution",
-    "on the resolution", "on the joint resolution", "override",
+    "on passage", "suspend the rules and pass", "on concurring",
+    "on agreeing to the resolution", "on the resolution", "on the joint resolution",
+    "override",
+)
+
+# Votes on a proposed change to the text -- recorded, never a gap.
+_AMENDMENT = (
+    "on the amendment", "on agreeing to the amendment",
 )
 
 
 def classify(question: str) -> str:
     """'procedural' | 'of_the_text' | 'other'.
 
-    'other' is the honest middle: a vote we cannot place. It is recorded, and it
-    is NOT given a gap, because we will not guess what it measured.
+    'other' is the honest middle: a vote we cannot place, OR a vote on a proposed
+    change to the text. It is recorded, and it is NOT given a gap, because we will
+    not guess what it measured -- and an amendment vote measured agreement with an
+    amendment, not with the bill.
     """
     q = (question or "").lower()
     if any(k in q for k in _PROCEDURAL):
         return "procedural"
+    if any(k in q for k in _AMENDMENT):
+        return "other"
     if any(k in q for k in _OF_THE_TEXT):
         return "of_the_text"
     return "other"

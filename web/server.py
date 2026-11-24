@@ -56,7 +56,14 @@ CONTENT_TYPES = {
 
 # S5 — the device cookie. Two years: a reading is per device, so the key has to
 # outlive the tab. HttpOnly because no script needs to read it; Secure because the
-# app is only ever reached over TLS (tailscale serve terminates it).
+# identity mechanism only exists over TLS.
+#
+# Verified 24 Nov: over the plain-HTTP tailnet origin the browser stores NOTHING --
+# isSecureContext is false and a Secure cookie is refused -- so a reading taken there
+# is silently anonymous and the one-reading-per-device refusal never fires. The
+# tailnet address is therefore a READ-ONLY view of Boule; the HTTPS origin
+# (boule.incidium.net, terminated by cloudflared) is the only place a device key
+# exists. This is why TLS was a prerequisite of S5/S6 and not a later nicety.
 DEVICE_COOKIE = "boule_device"
 DEVICE_COOKIE_SECONDS = 2 * 365 * 24 * 60 * 60
 
@@ -205,6 +212,15 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/sw.js":
             return self._send(200, (STATIC / "sw.js").read_bytes(),
                               "text/javascript; charset=utf-8", head_only=head_only)
+
+        # The manifest is served from the ROOT for the same reason the worker is: its
+        # start_url and scope are resolved RELATIVE TO THE MANIFEST'S OWN URL, so a
+        # manifest under /static/ scopes the installed app to /static/ and opens it at
+        # a 404 -- an install that succeeds and is useless. At the root, "." means the
+        # site root, which is also true in a subpath deploy.
+        if path == "/manifest.webmanifest":
+            return self._send(200, (HERE / "manifest.webmanifest").read_bytes(),
+                              "application/manifest+json; charset=utf-8", head_only=head_only)
 
         if path.startswith("/static/"):
             return self._static(path)

@@ -29,6 +29,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.parse
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -98,8 +99,9 @@ def main() -> int:
             return 1
 
         # --- the manifest --------------------------------------------------------
-        status, headers, blob = get("/static/manifest.webmanifest")
-        results.append(("the manifest is served", status == 200))
+        MANIFEST = "/manifest.webmanifest"
+        status, headers, blob = get(MANIFEST)
+        results.append(("the manifest is served from the ROOT", status == 200))
         results.append(("with the manifest content type",
                         "manifest+json" in headers.get("Content-Type", "")))
         man = json.loads(blob)
@@ -107,10 +109,27 @@ def main() -> int:
                         bool(man.get("name")) and bool(man.get("start_url"))))
         results.append(("it asks for standalone display", man.get("display") == "standalone"))
 
+        # --- and its start_url and scope RESOLVE to the site root -----------------
+        # Both are relative to the MANIFEST'S OWN URL, so a manifest served from a
+        # subpath scopes the installed app to that subpath and opens it at a 404 --
+        # an install that succeeds and is useless. Resolve them the way a browser
+        # does, and prove the result is a page that actually exists.
+        base = MANIFEST.rsplit("/", 1)[0] + "/"
+
+        def resolve(ref: str) -> str:
+            return urllib.parse.urljoin(base, ref)
+
+        start, scope = resolve(man["start_url"]), resolve(man.get("scope", "."))
+        results.append((f"start_url resolves to the site root ({start})", start == "/"))
+        results.append((f"scope covers the whole site ({scope})", scope == "/"))
+        status, _, _ = get(start)
+        results.append((f"the resolved start_url is a real page ({start} -> {status})",
+                        status == 200))
+
         # --- every declared icon must exist AT ITS DECLARED SIZE -----------------
         ok_icons, ok_sizes, checked = True, True, []
         for icon in man.get("icons", []):
-            s, _, ib = get("/static/" + icon["src"].lstrip("/"))
+            s, _, ib = get(resolve(icon["src"]))
             if s != 200:
                 ok_icons = False
                 continue
