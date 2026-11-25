@@ -1,0 +1,27 @@
+[
+  {
+    "bill_id": "119hr5364",
+    "score": 4,
+    "reason": "Title-kernel mismatch alert: 'STOP FRAUD' framing historically precedes Medicaid eligibility tightening, provider payment cuts, or enrollment barriers. Without summary text, the title itself signals potential entitlement erosion vector wrapped in compliance rhetoric.",
+    "vectors": [
+      "entitlement_erosion_medicaid",
+      "compliance_framing_as_cover",
+      "eligibility_or_payment_restructuring_likely"
+    ],
+    "title": "STOP FRAUD in Medicaid Act",
+    "url": "https://www.congress.gov/bill/119th-congress/hr-bill/5364"
+  },
+  {
+    "bill_id": "119s1023",
+    "score": 4,
+    "reason": "Title suggests potential entitlement erosion via overpayment forgiveness mechanics\u2014common vector for shifting liability burden or creating administrative exemptions that benefit specific cohorts while degrading program solvency signals.",
+    "vectors": [
+      "entitlement_erosion",
+      "liability_shifting",
+      "administrative_carve_out",
+      "fiscal_bleed_via_debt_service"
+    ],
+    "title": "Social Security Overpayment Relief Act",
+    "url": "https://www.congress.gov/bill/119th-congress/s-bill/1023"
+  }
+]
