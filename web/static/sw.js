@@ -11,7 +11,7 @@
    go stale without changing a figure. Boule therefore does NOT work offline, and the
    worker does not pretend it does: voting needs the network by definition.
 */
-const SHELL = 'boule-shell-v1';
+const SHELL = 'boule-shell-v2';
 const SHELL_ASSETS = ['/static/boule.css', '/static/icon.svg'];
 
 self.addEventListener('install', (event) => {

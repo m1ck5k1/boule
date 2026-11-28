@@ -15,6 +15,7 @@
   --sans:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
   --mono:ui-monospace,"SF Mono",Menlo,monospace;
   --gap:28px; --ds:.14em;
+  color-scheme:light;
 }
 html[data-mode="ink"]{
   --paper:#14130F; --ink:#F2F0EA; --ink-2:#A9A296; --rule:#3A3730; --rule-hard:#F2F0EA;

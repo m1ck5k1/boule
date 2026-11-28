@@ -110,7 +110,7 @@ def page(title: str, body: str, current_nav: str = "Today",
 <!-- S6 — the installable PWA. The design rule is "no icons"; a LAUNCHER icon is not a
      UI icon, it is the one place a name is all that fits. The manifest is what makes the
      app installable, and the install is what makes a device key durable. -->
-<meta name="theme-color" content="#14130F">
+<meta name="theme-color" content="#FAF9F6">
 <link rel="icon" href="{href('/static/icon.svg')}" type="image/svg+xml">
 <link rel="apple-touch-icon" href="{href('/static/icon-180.png')}">
 <link rel="manifest" href="{href('/manifest.webmanifest')}">
